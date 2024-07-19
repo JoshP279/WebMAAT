@@ -1,0 +1,34 @@
+<nav class="navbar">
+  <div class="container">
+    <h1 class="logo">Dashboard</h1>
+    <ul class="nav-menu">
+      <li><a routerLink="/add-assessment" (click) = "onAddAssessment()">Add Assessment</a></li>
+      <li><a routerLink="/logout" (click)="onLogout()">Logout</a></li>
+    </ul>
+  </div>
+</nav>
+<h2>Current Assessments</h2>
+<div class="assessments-header">
+  <div class="search-add">
+    <input type="text" placeholder="Search" class="search-input"
+           [(ngModel)]="searchTerm" (input)="onSearch()">
+  </div>
+</div>
+
+<div class="assessments-list">
+  <div *ngFor="let assessment of filteredAssessments" class="assessment-item" (click) = "onViewAsssessment(assessment.assessmentID,assessment.assessmentName)">
+    <h3>{{ assessment.moduleCode }}</h3>
+    <p>{{ assessment.assessmentName }}</p>
+    
+    <div class="progress-circle">
+      <svg width="100" height="100">
+        <circle cx="50" cy="50" r="45" class="circle-bg"></circle>
+        <circle cx="50" cy="50" r="45" class="circle"
+        [attr.stroke-dasharray]="calculateDashArray(assessment.numMarked, assessment.totalSubmissions)"
+        [attr.stroke]="getColor(assessment.numMarked, assessment.totalSubmissions)"></circle>
+      </svg>
+      <span class="progress-text">{{ getProgressPercentage(assessment.numMarked, assessment.totalSubmissions) }}%</span>
+    </div>
+    <p>{{ assessment.numMarked }} / {{ assessment.totalSubmissions }}</p>
+  </div>
+</div>
