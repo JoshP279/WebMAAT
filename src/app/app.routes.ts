@@ -3,6 +3,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ViewAssessmentComponent } from './pages/viewassessment/viewassessment.component';
 import { AddAssessmentComponent } from './pages/addassessment/addassessment.component';
+import { EditAssessmentComponent } from './pages/editassessment/editassessment.component';
 
 export const routes: Routes = [
     {
@@ -23,5 +24,9 @@ export const routes: Routes = [
     {
         path:'add-assessment',
         component:AddAssessmentComponent
+    },
+    {
+        path:'edit-assessment',
+        component:EditAssessmentComponent
     }
 ];

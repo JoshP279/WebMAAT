@@ -1,0 +1,85 @@
+.navbar {
+  background-color: #000080;
+  padding: 15px;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  color: white;
+  font-size: 24px;
+}
+
+.logo a:hover {
+  text-decoration: underline;
+}
+
+.nav-menu {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+}
+
+.nav-menu li a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+.nav-menu li a:hover {
+  text-decoration: underline;
+}
+
+.search-add {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  flex: 1;
+}
+
+.search-input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.content-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.submissions-section {
+  flex: 4;
+  margin-right: 20px;
+}
+
+.submissions-header {
+  margin-bottom: 20px;
+}
+
+.submissions-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stats-section {
+  flex: 1;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.submissions-item {
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+}

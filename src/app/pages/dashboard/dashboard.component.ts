@@ -43,9 +43,11 @@ export class DashboardComponent implements OnInit {
     onAddAssessment(): void{
       this.router.navigateByUrl('/add-assessment');
     }
-    onViewAsssessment(assessmentID:number,assessmentName:string){
+    onViewAsssessment(assessmentID:number,assessmentName:string, moduleCode:string): void{
       this.router.navigateByUrl('/view-assessment)')
       sessionStorage.setItem('assessmentID',assessmentID.toString());
+      sessionStorage.setItem('assessmentName',assessmentName);
+      sessionStorage.setItem('assessmentModule',moduleCode);
     }
     calculateDashArray(numMarked: number, totalSubmissions: number): string {
     const percentage = (numMarked / totalSubmissions) * 100;
@@ -69,7 +71,7 @@ export class DashboardComponent implements OnInit {
     );
   }
   onLogout(): void {
-    sessionStorage.removeItem('email');
+    sessionStorage.clear();
     this.router.navigateByUrl('/login');
   }
   onDashboard():void{

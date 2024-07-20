@@ -2,13 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../../API/api.service';
 import { Lecturer} from '../../classes/Lecturer';
-import { ModuleCode } from '../../classes/Module.Code';
+import { Module } from '../../classes/Module.Code';
 import { Marker } from '../../classes/Marker';
 import { Moderator } from '../../classes/Moderator';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import JSZip from 'jszip';
-
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-addassessment',
@@ -18,10 +18,11 @@ import JSZip from 'jszip';
   imports: [ReactiveFormsModule, CommonModule],
 })
 export class AddAssessmentComponent implements OnInit {
+  assessmentName: string = '';
   loading: boolean = false;
   assessmentForm: FormGroup;
   lecturers: Lecturer[] = [];
-  modules: ModuleCode[] = [];
+  modules: Module[] = [];
   AssessmentName: string = '';
   moderators: Moderator[] = [];
   markers: Marker[] = [];
@@ -37,7 +38,8 @@ export class AddAssessmentComponent implements OnInit {
       moderator: ['', Validators.required],
       markers: [[], Validators.required],
       totalMarks: [null, [Validators.required, Validators.pattern(/^[1-9]\d*$/)]],
-      selectedFile: [null, Validators.required]
+      selectedFile: [null, Validators.required],
+      selectedSubmissionsFile: [null, Validators.required]
     });
   }
 
@@ -54,7 +56,7 @@ export class AddAssessmentComponent implements OnInit {
   getModules(){
     this.api.getModules().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
-        this.modules = res.map((module: any) => new ModuleCode(module.ModuleCode));
+        this.modules = res.map((module: any) => new Module(module.ModuleCode, module.ModuleName));
       } else {
         alert('No modules found or invalid response format.');
       }
@@ -150,6 +152,15 @@ export class AddAssessmentComponent implements OnInit {
   
           return Promise.all(promises);
         }).then(() => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Emails sent successfully!',
+            toast: true,
+            position: 'bottom-end',
+            showConfirmButton: false,
+            timer: 3000
+          });
           this.loading = false;
         }).catch((error) => {
           alert('Error extracting ZIP file: ' + error);

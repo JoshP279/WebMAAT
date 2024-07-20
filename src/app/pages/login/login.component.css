@@ -1,11 +1,12 @@
 .header {
-    font-size: 10em; /* Adjust for desired size */
-    text-align: center; /* Center the text */
+    font-size: 10em;
+    text-align: center;
   }
   
 .blue {
-    color: blue; /* Color for the letter M */
+    color: #000080;
 }
+
 .login-container {
   width: 300px;
   margin: 0 auto;
@@ -38,7 +39,7 @@ input {
 button {
   width: 100%;
   padding: 10px;
-  background-color: #007bff;
+  background-color: #000080;
   border: none;
   color: white;
   border-radius: 5px;

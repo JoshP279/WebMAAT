@@ -16,6 +16,9 @@ export class ApiService {
   getAssessments(email: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/assessments?MarkerEmail=${email}`);
   }
+  getSubmissions(assessmentID: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/submissions?AssessmentID=${assessmentID}`);
+  }
   getLecturers(): Observable<any> {
     return this.http.get(`${this.baseUrl}/lecturers`);
   }
@@ -33,5 +36,14 @@ export class ApiService {
   }
   addSubmission(submissionForm: any): Observable<any> {
     return this.http.put(`${this.baseUrl}/addSubmission`, submissionForm);
+  }
+  getMarkedSubmission(submissionID: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/markedSubmission?SubmissionID=${submissionID}`);
+  }
+  sendEmail(emailData:any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/sendEmail`, emailData);
+  }
+  editAssessment(assessmentForm: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/editAssessment`, assessmentForm);
   }
 }

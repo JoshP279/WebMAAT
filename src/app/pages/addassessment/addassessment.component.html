@@ -5,12 +5,8 @@
 </div>
 
 <nav class="navbar">
-  <div class="navbar-container">
-    <h1 class="logo">
-      <a routerLink="/dashboard" (click)="onDashboard()" class="breadcrumb-item">Dashboard</a>
-      <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-item active"> <u>Add Assessment</u></span>
-    </h1>
+  <div class="container">
+    <h1 class="logo"><a routerLink="'/dashboard" (click)="onDashboard()">Dashboard</a> / Add Assessment</h1>
   </div>
 </nav>
 
@@ -65,7 +61,6 @@
       </select>
     </div>
 
-<!-- Upload the assessment memorandum -->
     <div class="form-group">
       <div class="file-upload-container">
         <br>
@@ -80,7 +75,6 @@
       </div>
     </div>
 
-    <!-- Upload the submissions (ZIP file) -->
     <div class="form-group">
       <div class="file-upload-container">
         <br>

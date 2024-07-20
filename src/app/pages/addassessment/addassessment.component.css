@@ -1,5 +1,5 @@
 .navbar {
-  background-color: #007bff;
+  background-color: #000080;
   padding: 15px;
 }
 .container {
@@ -10,6 +10,9 @@
 .logo {
   color: white;
   font-size: 24px;
+}
+.logo a:hover {
+  text-decoration: underline;
 }
 .nav-menu {
   list-style: none;
@@ -47,7 +50,7 @@
 
 .btn {
   padding: 10px 20px;
-  background-color: #007bff;
+  background-color: #000080;
   color: white;
   border: none;
   border-radius: 4px;
@@ -94,4 +97,12 @@
   color: #fff;
   font-size: 1.5em;
 }
+.breadcrumb-separator {
+  color: white;
+  margin-right: 10px;
+}
 
+.active-text {
+  color: white;
+  font-size: 24px;
+}

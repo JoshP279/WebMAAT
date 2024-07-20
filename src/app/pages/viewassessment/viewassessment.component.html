@@ -1,1 +1,36 @@
-<p>viewassessment works!</p>
+<nav class="navbar">
+  <div class="container">
+    <h1 class="logo">
+      <a routerLink="/dashboard" (click)="onDashboard()">Dashboard</a> / {{assessmentModule}} {{assessmentName}}
+    </h1>
+    <ul class="nav-menu">
+      <li><a (click)="onExportResults()">Export Results</a></li>
+      <li><a (click)="onPublishResults()">Publish Results</a></li>
+      <li><a routerLink="/logout" (click)="onEditAssessment()">Edit Assessment</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="content-container">
+  <div class="submissions-section">
+    <h2 class="submissions-header">Submissions</h2>
+    <div class="search-add">
+      <input type="text" placeholder="Search" class="search-input"
+             [(ngModel)]="searchTerm" (input)="onSearch()">
+    </div>
+    <div class="submissions-container">
+      <div *ngFor="let submission of filteredSubmissions" class="submissions-item" (click)="onExportMarkedSubmission(submission.submissionID, submission.submissionStatus)">
+        <b>{{submission.studentNumber}}</b> {{submission.studentName}} {{submission.studentSurname}}: {{submission.submissionMark}} %
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <h2>Statistics</h2>
+    <p><strong>Average Mark:</strong> {{averageMark}}</p>
+    <p><strong>Median Mark:</strong> {{medianMark}}</p>
+    <p><strong>Highest Mark:</strong> {{highestMark}}</p>
+    <p><strong>Lowest Mark:</strong> {{lowestMark}}</p>
+  </div>
+</div>
+
