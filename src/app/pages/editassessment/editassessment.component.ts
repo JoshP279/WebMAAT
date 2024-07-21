@@ -21,7 +21,6 @@ export class EditAssessmentComponent {
   assessmentID: number = 0;
   loading: boolean = false;
   assessmentForm: FormGroup;
-  lecturers: Lecturer[] = [];
   modules: Module[] = [];
   AssessmentName: string = '';
   moderators: Moderator[] = [];
@@ -38,7 +37,6 @@ export class EditAssessmentComponent {
       this.assessmentName = storedAssessmentName;
     }
     this.assessmentForm = this.fb.group({
-      lecturer: ['', Validators.required],
       assessmentName: ['', Validators.required],
       module: ['', Validators.required],
       moderator: ['', Validators.required],
@@ -53,7 +51,6 @@ export class EditAssessmentComponent {
   
   fetchData(): void {
     this.getModules();
-    this.getLecturers();
     this.getModerators();
     this.getMarkers();
   }
@@ -63,15 +60,6 @@ export class EditAssessmentComponent {
         this.modules = res.map((module: any) => new Module(module.ModuleCode, module.ModuleName));
       } else {
         alert('No modules found or invalid response format.');
-      }
-    });
-  }
-  getLecturers(){
-    this.api.getLecturers().subscribe((res: any) => {
-      if (res && Array.isArray(res)) {
-        this.lecturers = res.map((lecturer: any) => new Lecturer(lecturer.MarkerEmail));
-      } else {
-        alert('No lecturers found or invalid response format.');
       }
     });
   }
@@ -106,7 +94,7 @@ export class EditAssessmentComponent {
           const byteArray = new Uint8Array(fileData);
           const assessmentInfo = {
             AssessmentID: this.assessmentID,
-            MarkerEmail: this.assessmentForm.value.lecturer,
+            MarkerEmail: this.assessmentForm.value.markers,
             AssessmentName: this.assessmentForm.value.assessmentName,
             ModuleCode: this.assessmentForm.value.module,
             Memorandum: byteArray,

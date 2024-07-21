@@ -18,10 +18,10 @@ import Swal from 'sweetalert2';
   imports: [ReactiveFormsModule, CommonModule],
 })
 export class AddAssessmentComponent implements OnInit {
+  email: string = '';
   assessmentName: string = '';
   loading: boolean = false;
   assessmentForm: FormGroup;
-  lecturers: Lecturer[] = [];
   modules: Module[] = [];
   AssessmentName: string = '';
   moderators: Moderator[] = [];
@@ -32,24 +32,28 @@ export class AddAssessmentComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private api: ApiService, private router: Router) {
     this.assessmentForm = this.fb.group({
-      lecturer: ['', Validators.required],
       assessmentName: ['', Validators.required],
       module: ['', Validators.required],
       moderator: ['', Validators.required],
       markers: [[], Validators.required],
       totalMarks: [null, [Validators.required, Validators.pattern(/^[1-9]\d*$/)]],
-      selectedFile: [null, Validators.required],
-      selectedSubmissionsFile: [null, Validators.required]
+      selectedMFile: [null, Validators.required],
+      selectedSFile: [null, Validators.required]
     });
   }
 
   ngOnInit(): void {
+    if (window && window.sessionStorage) {
+      const storedEmail = sessionStorage.getItem('email');
+      if (storedEmail != null){
+        this.email = storedEmail;
+      }
+  }
     this.fetchData();
   }
   
   fetchData(): void {
     this.getModules();
-    this.getLecturers();
     this.getModerators();
     this.getMarkers();
   }
@@ -59,15 +63,6 @@ export class AddAssessmentComponent implements OnInit {
         this.modules = res.map((module: any) => new Module(module.ModuleCode, module.ModuleName));
       } else {
         alert('No modules found or invalid response format.');
-      }
-    });
-  }
-  getLecturers(){
-    this.api.getLecturers().subscribe((res: any) => {
-      if (res && Array.isArray(res)) {
-        this.lecturers = res.map((lecturer: any) => new Lecturer(lecturer.MarkerEmail));
-      } else {
-        alert('No lecturers found or invalid response format.');
       }
     });
   }
@@ -93,13 +88,14 @@ export class AddAssessmentComponent implements OnInit {
     if (this.assessmentForm.valid) {
       this.loading = true;
       const reader = new FileReader();
-      const file: File = this.assessmentForm.value.selectedFile;
+      const file: File = this.assessmentForm.value.selectedMFile;
       if (file) {
         reader.onloadend = async () => {
           const fileData = reader.result as ArrayBuffer;
           const byteArray = new Uint8Array(fileData);
           const assessmentInfo = {
-            MarkerEmail: this.assessmentForm.value.lecturer,
+            LecturerEmail: this.email,
+            MarkerEmail: this.assessmentForm.value.markers,
             AssessmentName: this.assessmentForm.value.assessmentName,
             ModuleCode: this.assessmentForm.value.module,
             Memorandum: byteArray,
@@ -155,7 +151,7 @@ export class AddAssessmentComponent implements OnInit {
           Swal.fire({
             icon: 'success',
             title: 'Success',
-            text: 'Emails sent successfully!',
+            text: 'Assessment added successfully!',
             toast: true,
             position: 'bottom-end',
             showConfirmButton: false,
@@ -211,7 +207,7 @@ export class AddAssessmentComponent implements OnInit {
     if (file) {
       this.selectedMemoFile = file;
       this.assessmentForm.patchValue({
-        selectedFile: file
+        selectedMFile: file
       });
     } else {
       alert('Invalid file type. Please select a ZIP or PDF file.');
@@ -222,6 +218,9 @@ export class AddAssessmentComponent implements OnInit {
     const file: File = event.target.files[0];
     if (file) {
       this.selectedSubmissionsFile = file;
+      this.assessmentForm.patchValue({
+        selectedSFile: file
+      });
     } else {
       alert('Invalid file type. Please select a ZIP file.');
     }
@@ -234,7 +233,7 @@ export class AddAssessmentComponent implements OnInit {
     if (file) {
       this.selectedMemoFile = file;
       this.assessmentForm.patchValue({
-        selectedFile: file
+        selectedMFile: file
       });
     } else {
       alert('Invalid file type. Please select a PDF file.');
@@ -248,6 +247,9 @@ export class AddAssessmentComponent implements OnInit {
     const file = event.dataTransfer?.files[0];
     if (file) {
       this.selectedSubmissionsFile = file;
+      this.assessmentForm.patchValue({
+        selectedSFile: file
+      });
     } else {
       alert('Invalid file type. Please select a ZIP file.');
     }

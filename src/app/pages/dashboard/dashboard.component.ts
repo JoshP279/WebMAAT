@@ -12,6 +12,7 @@ import { Router } from '@angular/router';
   imports: [CommonModule, FormsModule],
 })
 export class DashboardComponent implements OnInit {
+  email: string = '';
   assessments: Assessment[] = [];
   filteredAssessments: Assessment[] = [];
   searchTerm: string = '';
@@ -21,9 +22,10 @@ export class DashboardComponent implements OnInit {
     // the window if statement below is from stack overflow because of an error I was getting, below is the link to the stack overflow page
     //https://stackoverflow.com/questions/56552343/how-can-i-fix-sessionstorage-is-not-defined-in-svelte
     if (window && window.sessionStorage) {
-      const email = sessionStorage.getItem('email');
-      if (email != null){
-        this.onGetAssessments(email);
+      const storedEmail = sessionStorage.getItem('email');
+      if (storedEmail != null){
+        this.email = storedEmail;
+        this.onGetAssessments(this.email);
       }
   }
 }
@@ -36,12 +38,13 @@ export class DashboardComponent implements OnInit {
           alert('No assessments found or invalid response format.');
         }
       }, (error) => {
-        alert('An error occurred while fetching assessments.');
+        console.log(error);
       });
     }
 
     onAddAssessment(): void{
       this.router.navigateByUrl('/add-assessment');
+      sessionStorage.setItem('email',this.email);
     }
     onViewAsssessment(assessmentID:number,assessmentName:string, moduleCode:string): void{
       this.router.navigateByUrl('/view-assessment)')

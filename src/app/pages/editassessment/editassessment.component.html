@@ -6,35 +6,23 @@
   
   <div class="form-container">
     <h2>Update Assessment</h2>
-    <form [formGroup]="assessmentForm" (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <div class="flex-container">
-          <div class="flex-item">
-            <label for="lecturer">Lecturer</label>
-            <select id="lecturer" formControlName="lecturer" class="form-control">
-              <option value="" disabled selected>Select a lecturer</option>
-              <option *ngFor="let lecturer of lecturers" [value]="lecturer.MarkerEmail">{{ lecturer.MarkerEmail }}</option>
-            </select>
-          </div>
-  
-          <div class="flex-item">
-            <label for="module">Module</label>
-            <select id="module" formControlName="module" class="form-control">
-              <option value="" disabled selected>Select a module</option>
-              <option *ngFor="let module of modules" [value]="module.ModuleCode">{{ module.ModuleCode }}</option>
-            </select>
-          </div>
+    <div class="form-container">
+      <h2>Add Assessment</h2>
+      <form [formGroup]="assessmentForm" (ngSubmit)="onSubmit()">
+              <label for="module">Module</label>
+              <select id="module" formControlName="module" class="form-control">
+                <option value="" disabled selected>Select a module</option>
+                <option *ngFor="let module of modules" [value]="module.ModuleCode">{{ module.ModuleCode }}</option>
+              </select>
+        
+        <div class="form-group">
+              <label for="moderator">Moderator</label>
+              <select id="moderator" formControlName="moderator" class="form-control">
+                <option value="" disabled selected>Select a moderator</option>
+                <option *ngFor="let moderator of moderators" [value]="moderator.ModEmail">{{ moderator.ModEmail }}</option>
+              </select>
         </div>
-      </div>
-      
-      <div class="form-group">
-            <label for="moderator">Moderator</label>
-            <select id="moderator" formControlName="moderator" class="form-control">
-              <option value="" disabled selected>Select a moderator</option>
-              <option *ngFor="let moderator of moderators" [value]="moderator.ModEmail">{{ moderator.ModEmail }}</option>
-            </select>
-      </div>
-  
+
       <div class="form-group">
         <label for="totalMarks">Assessment Name</label>
         <input type="text" id="assessmentName" formControlName="assessmentName" class="form-control">
