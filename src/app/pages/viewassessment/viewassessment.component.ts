@@ -169,6 +169,13 @@ export class ViewAssessmentComponent implements OnInit {
                     'Please contact your lecturer if you have any queries.',
           pdfData: res.pdfData
         };
+        this.api.sendEmail(emailData).subscribe((res: any) => {
+          if (res && res.message === 'Email sent successfully') {
+            console.log('Email sent successfully');
+          } else {
+            alert('Failed to send email');
+          }
+        })
       }
     });
   }
