@@ -5,7 +5,8 @@
     </h1>
     <ul class="nav-menu">
       <li><a (click)="onExportResults()">Export Results</a></li>
-      <li><a (click)="onPublishResults()">Publish Results</a></li>
+      <li><a (click)="onStudentsPublishResults()">Publish Results to Students</a></li>
+      <li><a (click)="onModeratorPublishResults()">Publish Results to Moderator</a></li>
       <li><a routerLink="/logout" (click)="onEditAssessment()">Edit Assessment</a></li>
     </ul>
   </div>
@@ -20,7 +21,13 @@
     </div>
     <div class="submissions-container">
       <div *ngFor="let submission of filteredSubmissions" class="submissions-item" (click)="onExportMarkedSubmission(submission.submissionID, submission.submissionStatus)">
-        <b>{{submission.studentNumber}}</b> {{submission.studentName}} {{submission.studentSurname}}: {{submission.submissionMark}} %
+        <b>{{submission.studentNumber}}</b>
+        <br>
+        <span>{{submission.studentName}} {{submission.studentSurname}}</span>
+        <br>
+        <span>{{submission.submissionMark}} %</span>
+        <br>
+        <span>{{submission.submissionStatus}}</span>
       </div>
     </div>
   </div>

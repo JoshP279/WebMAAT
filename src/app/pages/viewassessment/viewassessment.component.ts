@@ -19,6 +19,7 @@ export class ViewAssessmentComponent implements OnInit {
   assessmentID: number = 0;
   assessmentName: string = '';
   assessmentModule: string = '';
+  modEmail: string = '';
   searchTerm: string = '';
   submissions: Submission[] = [];
   filteredSubmissions: Submission[] = [];
@@ -34,14 +35,18 @@ export class ViewAssessmentComponent implements OnInit {
       const storedAssessmentID = sessionStorage.getItem('assessmentID');
       const storedAssessmentName = sessionStorage.getItem('assessmentName');
       const storedAssessmentModule = sessionStorage.getItem('assessmentModule');
+      const storedAssessmentModEmail = sessionStorage.getItem('modEmail');
       if (storedAssessmentID !== null) {
-        this.assessmentID = parseInt(storedAssessmentID, 0);
+        this.assessmentID = parseInt(storedAssessmentID);
       }
       if (storedAssessmentName !== null) {
         this.assessmentName = storedAssessmentName;
       }
       if (storedAssessmentModule !== null) {
         this.assessmentModule = storedAssessmentModule;
+      }
+      if (storedAssessmentModEmail !== null) {
+        this.modEmail = storedAssessmentModEmail;
       }
     }
     this.getSubmissions(this.assessmentID);
@@ -53,7 +58,11 @@ export class ViewAssessmentComponent implements OnInit {
         this.submissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus));
         this.filteredSubmissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus));
       } else {
-        alert('Cannot retrieve submissions for this assessment');
+        Swal.fire({
+          icon: "error",
+          title: "No connection",
+          text: "Cannot connect to server",
+        });
       }
     });
   }
@@ -88,9 +97,11 @@ export class ViewAssessmentComponent implements OnInit {
     sessionStorage.clear();
     this.router.navigateByUrl('/login');
   }
+  
   onDashboard(): void {
     this.router.navigateByUrl('/dashboard');
   }
+
   onSearch(): void {
     this.filteredSubmissions = this.submissions.filter(submission =>
       submission.studentNumber.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
@@ -98,14 +109,10 @@ export class ViewAssessmentComponent implements OnInit {
       submission.studentName.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
+
   //the below code is edited from stack overflow: https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
   onExportResults(): void {
-    const header = 'StudentNumber,StudentName,StudentSurname,SubmissionMark\n';
-    const rows = this.submissions.map(submission =>
-      `${submission.studentNumber},${submission.studentName || ''},${submission.studentSurname || ''},${submission.submissionMark}`
-    ).join('\n');
-    const csvContent = header + rows;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = this.getCSVData();
     const link = document.createElement('a');
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
@@ -115,8 +122,16 @@ export class ViewAssessmentComponent implements OnInit {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
     }
+  }
+
+  getCSVData(): Blob{
+    const header = 'StudentNumber,StudentName,StudentSurname,SubmissionMark\n';
+    const rows = this.submissions.map(submission =>
+      `${submission.studentNumber},${submission.studentName || ''},${submission.studentSurname || ''},${submission.submissionMark}`
+    ).join('\n');
+    const csvContent = header + rows;
+    return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   }
 
   onExportMarkedSubmission(submissionID: number, submissionStatus:string): void {
@@ -132,32 +147,102 @@ export class ViewAssessmentComponent implements OnInit {
           link.click();
           document.body.removeChild(link);
         } else {
-          alert('Cannot retrieve marked submission');
+          Swal.fire({
+            icon: "error",
+            title: "Error!",
+            text: "Unable to retrieve marked submission",
+          });
         }
       });
     }else{
-      alert('Submission is not marked yet');
+      Swal.fire({
+        icon: "warning",
+        title: "Not yet!",
+        text: "Submission has not been marked yet",
+      });
     }
   }
+
   onEditAssessment(){
     this.router.navigateByUrl('/edit-assessment');
   }
-  onPublishResults(): void {
+
+  onStudentsPublishResults(): void {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This will email all marked students their assessed script.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#000080",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, publish results"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.sendStudentEmails();
+        Swal.fire({
+          title: "Results published!",
+          text: "All marked students have been emailed their assessed script.",
+          icon: "success"
+        });
+      }
+    });
+  }
+
+  sendStudentEmails(): void {
     for (const sub of this.submissions){
       if (sub.submissionStatus === 'Marked'){
         this.sendEmail(sub.submissionID, sub.studentNumber);
       }
     }
+  }
+
+  onModeratorPublishResults(): void {
     Swal.fire({
-      icon: 'success',
-      title: 'Success',
-      text: 'Emails sent successfully!',
-      toast: true,
-      position: 'bottom-end',
-      showConfirmButton: false,
-      timer: 3000
+      title: "Are you sure?",
+      text: "This will email the moderator the results of the assessment.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#000080",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, publish results"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.sendModeratorEmail();
+      }
     });
   }
+  
+  sendModeratorEmail(): void {
+    const csvBlob = this.getCSVData();
+    const formData = new FormData();
+    formData.append('to', this.modEmail);
+    formData.append('subject', `${this.assessmentModule} ${this.assessmentName} Results`);
+    formData.append('text', 'Please find the attached results for an assessment you are moderating.\n' +
+                            'This is an automated email. Please contact the module lecturer if you have any queries.');
+    formData.append('csv', csvBlob, 'assessment_results.csv');
+    this.api.sendModeratorEmail(formData).subscribe((res: any) => {
+    if (res && res.message === 'Failed to send email') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Failed to send email',
+            text: res.error,
+          });
+        } else {
+          Swal.fire({
+            title: "Results published!",
+            text: "The moderator has been emailed the results of the assessment.",
+            icon: "success"
+          });
+        }
+      }, (error) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'An error occurred while sending the email. Please try again later.',
+        });
+      });
+    }
+
   sendEmail(submissionID:number, studentNumber:string): void {
     this.api.getMarkedSubmission(submissionID).subscribe((res: any) => {
       if (res && res.pdfData && res.pdfData.type === 'Buffer') {
@@ -169,14 +254,17 @@ export class ViewAssessmentComponent implements OnInit {
                     'Please contact your lecturer if you have any queries.',
           pdfData: res.pdfData
         };
-        this.api.sendEmail(emailData).subscribe((res: any) => {
-          if (res && res.message === 'Email sent successfully') {
-            console.log('Email sent successfully');
-          } else {
-            alert('Failed to send email');
+        this.api.sendStudentEmail(emailData).subscribe((res: any) => {
+          if (res && res.message === 'Failed to send email') {
+            Swal.fire({
+              icon: "error",
+              title: "Faild to send email",
+              text: res.error,
+            });
           }
-        })
+        });
       }
-    });
+    }
+    );
   }
 }

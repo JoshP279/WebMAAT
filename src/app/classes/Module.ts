@@ -1,3 +1,6 @@
+/**
+ * Module class that stores the module code and module name.
+ */
 export class Module{
     ModuleCode: string;
     ModuleName: string;

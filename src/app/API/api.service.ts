@@ -5,6 +5,12 @@ import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
+/**
+ * ApiService class
+ * This class is used to make API calls to the backend server
+ * The base URL is set to the IP address of the backend server
+ * The methods in this class are used to make requests to the server
+ */
 export class ApiService {
   private baseUrl = 'http://10.0.0.110:3306';
 
@@ -40,8 +46,11 @@ export class ApiService {
   getMarkedSubmission(submissionID: number): Observable<any> {
     return this.http.get(`${this.baseUrl}/markedSubmission?SubmissionID=${submissionID}`);
   }
-  sendEmail(emailData:any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/sendEmail`, emailData);
+  sendStudentEmail(emailData:any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/sendStudentEmail`, emailData);
+  }
+  sendModeratorEmail(emailData:any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/sendModeratorEmail`, emailData);
   }
   editAssessment(assessmentForm: any): Observable<any> {
     return this.http.put(`${this.baseUrl}/editAssessment`, assessmentForm);

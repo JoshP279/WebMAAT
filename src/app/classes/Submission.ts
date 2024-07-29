@@ -1,3 +1,8 @@
+/**
+ * This class is used to create a Submission object
+ * This class is used to create a Submission object, and stores the submissionID, studentNumber, submissionMark, studentName, 
+ * studentSurname and submissionStatus of the submission.
+ */
 export class Submission{
     submissionID: number;
     studentNumber: string;

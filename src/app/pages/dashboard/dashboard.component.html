@@ -16,7 +16,7 @@
 </div>
 
 <div class="assessments-list">
-  <div *ngFor="let assessment of filteredAssessments" class="assessment-item" (click) = "onViewAsssessment(assessment.assessmentID,assessment.assessmentName, assessment.moduleCode)">
+  <div *ngFor="let assessment of filteredAssessments" class="assessment-item" (click) = "onViewAsssessment(assessment.assessmentID,assessment.assessmentName, assessment.moduleCode, assessment.modEmail)">
     <h3>{{ assessment.moduleCode }}</h3>
     <p>{{ assessment.assessmentName }}</p>
     <div class="progress-circle">
