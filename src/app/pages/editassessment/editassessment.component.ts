@@ -23,6 +23,7 @@ import Swal from 'sweetalert2';
 export class EditAssessmentComponent implements OnInit {
   assessmentName: string = '';
   assessmentID: number = 0;
+  email = '';
   loading: boolean = false;
   assessmentForm: FormGroup;
   modules: Module[] = [];
@@ -40,11 +41,15 @@ export class EditAssessmentComponent implements OnInit {
   constructor(private fb: FormBuilder, private api: ApiService, private router: Router) {
     const storedAssessmentID = sessionStorage.getItem('assessmentID');
     const storedAssessmentName = sessionStorage.getItem('assessmentName');
+    const storedEmail = sessionStorage.getItem('email');
     if (storedAssessmentID !== null) {
       this.assessmentID = parseInt(storedAssessmentID, 0);
     }
     if (storedAssessmentName !== null) {
       this.assessmentName = storedAssessmentName;
+    }
+    if (storedEmail !== null) {
+      this.email = storedEmail;
     }
     this.assessmentForm = this.fb.group({
       assessmentName: ['', Validators.required],
@@ -96,7 +101,10 @@ export class EditAssessmentComponent implements OnInit {
   getModerators(){
     this.api.getModerators().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
-        this.moderators = res.map((moderator: any) => new Moderator(moderator.ModEmail));
+        console.log(this.email);
+        this.moderators = res
+                              .filter((moderator: any) => moderator.ModEmail !== this.email)
+                              .map((moderator: any) => new Moderator(moderator.ModEmail));
       } else {
         alert('No moderators found or invalid response format.');
       }
@@ -114,12 +122,15 @@ export class EditAssessmentComponent implements OnInit {
   getMarkers(){
     this.api.getMarkers().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
-        this.markers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname));
+        this.markers = res
+                          .filter((marker: any) => marker.MarkerEmail !== this.email)
+                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname));
       }else{
         alert('No markers found or invalid response format.');
       }
   });
 }
+
   onDashboard(): void {
     this.router.navigateByUrl('/dashboard');
   }

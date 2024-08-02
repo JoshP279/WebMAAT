@@ -54,13 +54,10 @@ export class AddAssessmentComponent implements OnInit {
    * This function fetches the modules, moderators and markers from the server.
    */
   ngOnInit(): void {
-    if (window && window.sessionStorage) {
-      const storedEmail = sessionStorage.getItem('email');
-      if (storedEmail != null){
-        this.email = storedEmail;
-      }
-  }
-    this.fetchData();
+    const storedEmail = sessionStorage.getItem('email');
+    if (storedEmail != null){
+      this.fetchData();
+    }
   }
   
   fetchData(): void {

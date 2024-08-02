@@ -35,8 +35,9 @@ export class LoginComponent {
    */
   onLogin() {
     this.api.login(this.loginObj).pipe(
-      timeout(10000), // Set timeout for 10 seconds
+      //.pipe() is used to chain multiple operators (functions in this case) together. catchError() is an operator that catches errors on the observable stream and handles them.
       catchError((error) => {
+        console.log(error);
         Swal.fire({
           icon: "error",
           title: "No connection",
@@ -56,7 +57,7 @@ export class LoginComponent {
           Swal.fire({
             icon: "error",
             title: "Invalid Credentials",
-            text: "You do not have the correct role to access this page",
+            text: "You do not have the correct role to access this page.",
           });
         }
       }

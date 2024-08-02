@@ -37,14 +37,12 @@ export class DashboardComponent implements OnInit {
    * It retrieves the email from session storage and calls the getAssessments method
    */
   ngOnInit(): void {
-    if (window && window.sessionStorage) {
       const storedEmail = sessionStorage.getItem('email');
       if (storedEmail != null){
         this.email = storedEmail;
         this.onGetAssessments(this.email);
       }
-  }
-}
+    }
     /**
      * This method is used to retrieve the assessments for a marker
      * @param email - The email of the marker
