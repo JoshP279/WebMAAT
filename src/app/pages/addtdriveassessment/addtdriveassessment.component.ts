@@ -1,29 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../../API/api.service';
-import { Lecturer} from '../../classes/Lecturer';
 import { Module } from '../../classes/Module';
 import { Marker } from '../../classes/Marker';
 import { Moderator } from '../../classes/Moderator';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import JSZip from 'jszip';
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-editassessment',
+  selector: 'app-addassessment',
   standalone: true,
-  imports: [ReactiveFormsModule,CommonModule],
-  templateUrl: './editassessment.component.html',
-  styleUrl: './editassessment.component.css'
+  templateUrl: './addtdriveassessment.component.html',
+  styleUrls: ['./addtdriveassessment.component.css'],
+  imports: [ReactiveFormsModule, CommonModule],
 })
 /**
- * EditAssessmentComponent class for editing an assessment
+ * AddAssessment component for handling the addition of assessments.
  * OnInit is implemented, to allow for retrieval of data when the component is initialized.
  */
-export class EditAssessmentComponent implements OnInit {
+export class AddTdriveAssessmentComponent implements OnInit {
+  email: string = '';
   assessmentName: string = '';
-  assessmentID: number = 0;
-  email = '';
   loading: boolean = false;
   assessmentForm: FormGroup;
   modules: Module[] = [];
@@ -33,6 +32,7 @@ export class EditAssessmentComponent implements OnInit {
   selectedMarkers: Marker[] = [];
   TotalMark: number = 0;
   selectedMemoFile: File | null = null;
+  selectedSubmissionsFile: File | null = null;
 
   /**
    * @param fb - The form builder service for creating form controls
@@ -40,34 +40,26 @@ export class EditAssessmentComponent implements OnInit {
    * @param router - The router service for navigating between pages
    */
   constructor(private fb: FormBuilder, private api: ApiService, private router: Router) {
-    const storedAssessmentID = sessionStorage.getItem('assessmentID');
-    const storedAssessmentName = sessionStorage.getItem('assessmentName');
-    const storedEmail = sessionStorage.getItem('email');
-    if (storedAssessmentID !== null) {
-      this.assessmentID = parseInt(storedAssessmentID, 0);
-    }
-    if (storedAssessmentName !== null) {
-      this.assessmentName = storedAssessmentName;
-    }
-    if (storedEmail !== null) {
-      this.email = storedEmail;
-    }
     this.assessmentForm = this.fb.group({
       assessmentName: ['', Validators.required],
       module: ['', Validators.required],
       moderator: ['', Validators.required],
       markers: [[], Validators.required],
       totalMarks: [null, [Validators.required, Validators.pattern(/^[1-9]\d*$/)]],
-      selectedFile: [null, Validators.required]
+      selectedMFile: [null, Validators.required],
+      selectedSFile: [null, Validators.required]
     });
   }
-
   /**
    * Function to handle the initialization of the component.
    * This function fetches the modules, moderators and markers from the server.
    */
   ngOnInit(): void {
-    this.fetchData();
+    const storedEmail = sessionStorage.getItem('email');
+    if (storedEmail != null){
+      this.email = storedEmail;
+      this.fetchData();
+    }
   }
   
   fetchData(): void {
@@ -75,7 +67,6 @@ export class EditAssessmentComponent implements OnInit {
     this.getModerators();
     this.getMarkers();
   }
-
   /**
    * Function to fetch the modules from the server.
    * This function sends a GET request to the server to fetch the modules.
@@ -87,7 +78,11 @@ export class EditAssessmentComponent implements OnInit {
       if (res && Array.isArray(res)) {
         this.modules = res.map((module: any) => new Module(module.ModuleCode, module.ModuleName));
       } else {
-        alert('No modules found or invalid response format.');
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: 'Error fetching modules',
+        });
       }
     });
   }
@@ -102,12 +97,15 @@ export class EditAssessmentComponent implements OnInit {
   getModerators(){
     this.api.getModerators().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
-        console.log(this.email);
         this.moderators = res
-                              .filter((moderator: any) => moderator.ModEmail !== this.email)
-                              .map((moderator: any) => new Moderator(moderator.ModEmail, moderator.Name, moderator.Surname));
+                            .filter((moderator: any) => moderator.ModEmail !== this.email)
+                            .map((moderator: any) => new Moderator(moderator.ModEmail, moderator.Name, moderator.Surname));
       } else {
-        alert('No moderators found or invalid response format.');
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: 'Error fetching moderators',
+          });
       }
     });
   }
@@ -126,36 +124,36 @@ export class EditAssessmentComponent implements OnInit {
         this.markers = res
                           .filter((marker: any) => marker.MarkerEmail !== this.email)
                           .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, ''));
-      }else{
-        alert('No markers found or invalid response format.');
-      }
+      }else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: 'Error fetching markers',
+        });
+    }
   });
 }
-
-  onDashboard(): void {
-    this.router.navigateByUrl('/dashboard');
-  }
-
-  /**
- * Function to handle the assessment being edited
- * This function is called when the form is updated.
+/**
+ * Function to handle the submission of the form.
+ * This function is called when the form is submitted.
  * If the form is valid, the function sets the loading variable to true, and reads the file selected for the memorandum.
  * The file is read as an array buffer, and the assessment information is created.
- * The assessment information is then sent to the server to edit the assessment.
+ * The assessment information is then sent to the server to add the assessment.
  * If the response is successful, the function calls the addSubmissions function.
  * If the response is unsuccessful, an error message is displayed.
  * If the form is invalid, an error message is displayed.
  */
   onSubmit(): void {
     if (this.assessmentForm.valid) {
+      this.loading = true;
       const reader = new FileReader();
-      const file: File = this.assessmentForm.value.selectedFile;
+      const file: File = this.assessmentForm.value.selectedMFile;
       if (file) {
         reader.onloadend = async () => {
           const fileData = reader.result as ArrayBuffer;
           const byteArray = new Uint8Array(fileData);
           const assessmentInfo = {
-            AssessmentID: this.assessmentID,
+            LecturerEmail: this.email,
             MarkerEmail: this.assessmentForm.value.markers,
             AssessmentName: this.assessmentForm.value.assessmentName,
             ModuleCode: this.assessmentForm.value.module,
@@ -166,28 +164,136 @@ export class EditAssessmentComponent implements OnInit {
             TotalNumSubmissions: 0
           };
           try {
-            console.log('edits assessment');
-            this.api.editAssessment(assessmentInfo).subscribe((res: any) => {
-              if (res && res.message === 'Assessment edited successfully') {
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Success',
-                  text: 'Assessment updated successfully!',
-                  toast: true,
-                  position: 'bottom-end',
-                  showConfirmButton: false,
-                  timer: 3000
-                });
+            this.api.addAssessment(assessmentInfo).subscribe((res: any) => {
+              if (res && res.message === 'Assessment added successfully') {
+                this.addSubmissions(res.assessmentID);
               }
-              this.router.navigateByUrl('/dashboard');
-            });
+          });
           } catch (error) {
-            alert('Failed to add assessment. Please try again.');
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: 'Failed to add assessment',
+            });
           }
         };
-
         reader.readAsArrayBuffer(file);
       }
+    }
+  }
+
+  /**
+   * Function to add submissions to the assessment.
+   * @param assessmentID - The ID of the assessment
+   * This function is called when the assessment is successfully added.
+   * The function reads the file selected for the submissions.
+   * The file is read as an array buffer, and the ZIP file is loaded asynchronously. Note that the ZIP file must be structured correctly for the submissions to be added successfully.
+   * The function then iterates through the ZIP file, extracting the folder name, first name, last name and student number from the folder name.
+   * The function then processes the submission PDF, adding the submission to the server.
+   * If the response is successful, a success message is displayed.
+   * If the response is unsuccessful, an error message is displayed.
+   * If there is an error reading the ZIP file, an error message is displayed.
+   */
+  addSubmissions(assessmentID: number): void {
+    if (this.selectedSubmissionsFile) {
+      const zip = new JSZip();
+      this.selectedSubmissionsFile.arrayBuffer().then((zipFileData) => {
+        zip.loadAsync(zipFileData).then((zipContents) => {
+          const promises: Promise<void>[] = [];
+          zip.forEach((relativePath, zipEntry) => {
+            const pathParts = relativePath.split('/');
+            if (pathParts.length > 1) {
+              const folderName = pathParts[0];
+              const fileName = pathParts[pathParts.length - 1];
+              const [firstName, lastName, studentNumber] = this.extractInfoFromFolderName(folderName);
+              console.log(`Folder: ${folderName}, FirstName: ${firstName}, LastName: ${lastName}, StudentNumber: ${studentNumber}`);
+              if (fileName.endsWith('.pdf')) {
+                promises.push(
+                  zipEntry.async('arraybuffer').then((pdfData) => {
+                    this.processSubmissionPDF(new Uint8Array(pdfData), assessmentID, firstName, lastName, studentNumber);
+                    this.router.navigateByUrl('/dashboard');
+                  })
+                );
+              }
+            }
+          });
+  
+          return Promise.all(promises);
+        }).then(() => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Assessment added successfully!',
+          });
+          this.loading = false;
+        }).catch((error) => {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: 'Failed to extract ZIP file. Please ensure the ZIP file is structured correctly. Error: ' + error,
+          });
+          this.loading = false;
+        });
+      }).catch((error) => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: 'Error reading ZIP file: ' + error,
+        });
+        this.loading = false;
+      });
+    }
+  }
+  /**
+   * 
+   * @param folderName - The name of the folder containing the submission. This folder name is parsed to extract student number, name and surname.
+   * @returns - A tuple containing the student number, first name and last name of the student.
+   */
+  extractInfoFromFolderName(folderName: string): [string, string, string] {
+    let [studentNumber, name] = folderName.split('-');
+    studentNumber = studentNumber.slice(1);
+    const nameParts = name.split('_')[0].split(' ');
+    console.log(nameParts.length)
+    if (nameParts.length <= 2) {//This case handles names with only 2 parts (e.g. John Doe)
+      return [nameParts[0], nameParts[1], studentNumber];
+    }//This case handles names with more than 2 parts (e.g. John Doe Smith)
+    const lastName = nameParts.slice(-2).join(' ');
+    const firstName = nameParts.slice(0, -2).join(' ');
+    return [firstName, lastName, studentNumber];
+  }
+  /**
+   * Function to process the submission PDF.
+   * @param pdfData - The PDF data of the submission
+   * @param assessmentID - The ID of the assessment
+   * @param firstName - The first name of the student
+   * @param lastName - The last name of the student 
+   * @param studentNumber - The student number of the student
+   * This function sends a PUT request to the server to add the submission.
+   * If the response is successful, a success message is displayed.
+   * If the response is unsuccessful, an error message is displayed.
+   */
+  processSubmissionPDF(pdfData: Uint8Array, assessmentID: number, firstName: string, lastName: string, studentNumber: string): void {
+    const submissionInfo = {
+      AssessmentID: assessmentID,
+      SubmissionPDF: pdfData,
+      StudentNum: studentNumber,
+      StudentName: firstName,
+      StudentSurname: lastName,
+      SubmissionStatus: 'Unmarked' // Default status is unmarked until the marker marks the submission
+    };
+  
+    try {
+      this.api.addSubmission(submissionInfo).subscribe((res: any) => {
+        if (res && res.message === 'Submission added successfully') {
+          console.log(`Submission added for ${firstName} ${lastName} (${studentNumber})`);
+        }
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: 'Failed to add submissions',
+      });
     }
   }
   /**
@@ -230,6 +336,28 @@ export class EditAssessmentComponent implements OnInit {
     }
   }
   /**
+   * Function to handle the selection of a file for the submissions.
+   * @param event - The event object for the file input
+   * This function is called when a file is selected for the submissions.
+   * If the file is a ZIP file, the file is stored in the selectedSubmissionsFile variable.
+   * If the file is not a ZIP file, an error message is displayed.
+   */
+  onSubmissionsFileSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (file && this.isZIP(file)) {
+      this.selectedSubmissionsFile = file;
+      this.assessmentForm.patchValue({
+        selectedSFile: file
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid File Type",
+        text: 'Please select a zip file',
+      });
+    }
+  }
+  /**
    * Function to handle the dropping of a file for the memorandum.
    * @param event - The drag event object for when a file is dropped
    * This function is called when a file is dropped for the memorandum.
@@ -250,6 +378,32 @@ export class EditAssessmentComponent implements OnInit {
         icon: "error",
         title: "Invalid File Type",
         text: 'Please select a PDF file',
+      });
+    }
+    this.removeDragOverClass();
+  }
+
+  /**
+   * Function to handle the dropping of a zip file for the submissions.
+   * @param event - The drag event object for when a file is dropped
+   * This function is called when a file is dropped for the submissions.
+   * If the file is a ZIP file, the file is stored in the selectedSubmissionsFile variable.
+   * If the file is not a ZIP file, an error message is displayed.
+   */
+  onSubmissionsDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer?.files[0];
+    if (file && this.isZIP(file)) {
+      this.selectedSubmissionsFile = file;
+      this.assessmentForm.patchValue({
+        selectedSFile: file
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid File Type",
+        text: 'Please select a zip file',
       });
     }
     this.removeDragOverClass();
@@ -313,6 +467,26 @@ export class EditAssessmentComponent implements OnInit {
     const dropzone = document.querySelector('.dropzone');
     dropzone?.classList.remove('dragover');
   }
+
+  /**
+   * Function to handle the logout of the user.
+   * This function is called when the user clicks the logout button.
+   * The user's email is removed from the session storage, and the user is redirected to the login page.
+   */
+  onLogout(): void {
+    sessionStorage.removeItem('email');
+    this.router.navigateByUrl('/login');
+  }
+
+  /**
+   * Function to navigate to the dashboard page.
+   * This function is called when the user clicks the dashboard button.
+   * The user is redirected to the dashboard page.
+   */
+  onDashboard(): void {
+    this.router.navigateByUrl('/dashboard');
+  }
+
   onMarkerChange(event: any, marker: Marker): void {
     if (event.target.checked) {
       // Add marker to selectedMarkers if checked

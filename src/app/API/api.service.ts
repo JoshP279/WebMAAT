@@ -22,6 +22,9 @@ export class ApiService {
   getAssessments(email: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/assessments?MarkerEmail=${email}`);
   }
+  getAllAssessments(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/allAssessments`);
+  }
   getSubmissions(assessmentID: number): Observable<any> {
     return this.http.get(`${this.baseUrl}/submissions?AssessmentID=${assessmentID}`);
   }
@@ -36,6 +39,9 @@ export class ApiService {
   }
   getMarkers(): Observable<any> {
     return this.http.get(`${this.baseUrl}/markers`);
+  }
+  getDemiMarkers(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/demiMarkers`);
   }
   addAssessment(assessmentForm: any): Observable<any> {
     return this.http.put(`${this.baseUrl}/addAssessment`, assessmentForm);
@@ -55,4 +61,37 @@ export class ApiService {
   editAssessment(assessmentForm: any): Observable<any> {
     return this.http.put(`${this.baseUrl}/editAssessment`, assessmentForm);
   }
+  addModerator(email: String, name: String): Observable<any> {
+    return this.http.put(`${this.baseUrl}/addModerator`, email);
+  }
+  addMarker(markerForm: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/addDemiMarker`, markerForm);
+  }
+  addModule(moduleForm: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/addModule`, moduleForm);
+  }
+  editModule( moduleCode: string,moduleName: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/editModule?ModuleCode=${moduleCode}&ModuleName=${moduleName}`, moduleCode);
+  }
+  addLecturer(lecturerForm: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/addLecturer`, lecturerForm);
+  }
+  editLecturer(email:string, name: string, surname:string, password: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/editLecturer?MarkerEmail=${email}&Name=${name}&Surname=${surname}&Password=${password}`, email);
+  }
+  deleteModule(moduleCode: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/deleteModule?ModuleCode=${moduleCode}`);
+  }
+  deleteMarker(email: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/deleteMarker?MarkerEmail=${email}`);
+  }
+  deleteModerator(email: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/deleteModerator?ModeratorEmail=${email}`);
+  }
+  editMarker(email: string, name: string, surname: string, password: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/editMarker?MarkerEmail=${email}&Name=${name}&Surname=${surname}&Password=${password}`, email);
+  }
+  deleteAssessment(assessmentID: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/deleteAssessment?AssessmentID=${assessmentID}`);
+}
 }

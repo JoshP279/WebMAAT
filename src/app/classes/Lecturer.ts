@@ -4,7 +4,14 @@
  */
 export class Lecturer{
     MarkerEmail: string;
-    constructor(MarkerEmail: string) {
+    Name:string;
+    Surname:string;
+    Password:string;
+    constructor(MarkerEmail: string, Name: string, Surname: string, Password:string){ {
       this.MarkerEmail = MarkerEmail;
+      this.Name = Name;
+      this.Surname = Surname;
+      this.Password = Password;
     }
   }
+}

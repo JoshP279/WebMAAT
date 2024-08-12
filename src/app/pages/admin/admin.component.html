@@ -1,0 +1,82 @@
+<div *ngIf="loading" class="loading-overlay">
+  <div class="loading-indicator">
+    Loading...
+  </div>
+</div>
+
+<nav class="navbar">
+  <div class="container">
+    <h1 class="logo">Admin Panel</h1>
+    <ul class="nav-menu">
+      <li><a routerLink="/logout" (click)="onLogout()">Logout</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="form-container">
+
+  <div class="form-group">
+    <label for="module"><h3>Add Module</h3></label>
+    <input type="text" id="moduleCode" [(ngModel)]="moduleCode" placeholder="Module Code" class="form-control">
+    <input type="text" id="moduleName" [(ngModel)]="moduleName" placeholder="Module Name" class="form-control">
+    <button class="btn" (click)="onAddModule()">Add Module</button>
+  </div>
+
+  <h3>Existing Modules</h3>
+  <ul>
+    <li *ngFor="let module of modules">
+      <span>{{ module.ModuleCode }} - {{ module.ModuleName }}</span>
+      <div class="action-buttons">
+        <button class="btn btn-sm btn-edit" (click)="onEditModule(module)">Edit</button>
+        <button class="btn btn-sm btn-delete" (click)="onDeleteModule(module.ModuleCode)">Delete</button>
+      </div>
+    </li>
+  </ul>
+
+  <div class="form-group">
+    <label for="lecturer"><h3>Add Lecturer</h3></label>
+    <input type="email" id="lecturerEmail" [(ngModel)]="lecturerEmail" placeholder="Email" class="form-control">
+    <input type="text" id="lecturerName" [(ngModel)]="lecturerName" placeholder="Name" class="form-control">
+    <input type="text" id="lecturerSurname" [(ngModel)]="lecturerSurname" placeholder="Surname" class="form-control">
+    <input type="text" id="lecturerPassword" [(ngModel)]="lecturerPassword" placeholder="Password" class="form-control">
+    <button class="btn" (click)="onAddLecturer()">Add Lecturer</button>
+  </div>
+
+  <h3>Existing Lecturers</h3>
+  <ul>
+    <li *ngFor="let lecturer of lecturers">
+      {{ lecturer.MarkerEmail }} - {{ lecturer.Name }} {{ lecturer.Surname}}
+      <div class = "action-buttons">
+        <button class="btn btn-sm btn-edit" (click)="onEditLecturer(lecturer)">Edit</button>
+        <button class="btn btn-sm btn-delete" (click)="onDeleteLecturer(lecturer.MarkerEmail)">Delete</button>
+      </div>
+    </li>
+  </ul>
+
+  <div class="form-group">
+    <label for="marker"><h3>Add Demi Marker</h3></label>
+    <input type="email" id="markerEmail" [(ngModel)]="markerEmail" placeholder="Demi Email" class="form-control">
+    <input type="text" id="markerName" [(ngModel)]="markerName" placeholder="Demi Name" class="form-control">
+    <input type="text" id="markerSurname" [(ngModel)]="markerSurname" placeholder="Demi Surame" class="form-control">
+    <input type="text" id="markerPassword" [(ngModel)]="markerPassword" placeholder="Demi Password" class="form-control">
+    <button class="btn" (click)="onAddDemiMarker()">Add Marker</button>
+  </div>
+
+  <h3>Existing Demi Markers</h3>
+  <ul>
+    <li *ngFor="let marker of markers">
+      {{ marker.MarkerEmail }} - {{ marker.Name }} {{ marker.Surname}}
+      <div class = "action-buttons">
+        <button class="btn btn-sm btn-edit" (click)="onEditDemiMarker(marker)">Edit</button>
+        <button class="btn btn-sm btn-delete" (click)="onDeleteDemiMarker(marker.MarkerEmail)">Delete</button>
+      </div>
+    </li>
+  </ul>
+  <h3>Current Assessments</h3>
+  <li *ngFor="let assessment of assessments">
+    {{ assessment.moduleCode }} - {{ assessment.assessmentName}}
+    <div class = "action-buttons">
+      <button class="btn btn-sm btn-delete" (click)="onDeleteAssessment(assessment.assessmentID)">Delete</button>
+    </div>
+  </li>
+</div>

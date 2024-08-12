@@ -6,7 +6,7 @@ import { Marker } from '../../classes/Marker';
 import { Moderator } from '../../classes/Moderator';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import JSZip from 'jszip';
+import JSZip, { folder } from 'jszip';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -29,6 +29,7 @@ export class AddAssessmentComponent implements OnInit {
   AssessmentName: string = '';
   moderators: Moderator[] = [];
   markers: Marker[] = [];
+  selectedMarkers: Marker[] = [];
   TotalMark: number = 0;
   selectedMemoFile: File | null = null;
   selectedSubmissionsFile: File | null = null;
@@ -56,6 +57,7 @@ export class AddAssessmentComponent implements OnInit {
   ngOnInit(): void {
     const storedEmail = sessionStorage.getItem('email');
     if (storedEmail != null){
+      this.email = storedEmail;
       this.fetchData();
     }
   }
@@ -97,7 +99,7 @@ export class AddAssessmentComponent implements OnInit {
       if (res && Array.isArray(res)) {
         this.moderators = res
                             .filter((moderator: any) => moderator.ModEmail !== this.email)
-                            .map((moderator: any) => new Moderator(moderator.ModEmail));
+                            .map((moderator: any) => new Moderator(moderator.ModEmail, moderator.Name, moderator.Surname));
       } else {
           Swal.fire({
             icon: "error",
@@ -121,7 +123,7 @@ export class AddAssessmentComponent implements OnInit {
       if (res && Array.isArray(res)) {
         this.markers = res
                           .filter((marker: any) => marker.MarkerEmail !== this.email)
-                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname));
+                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, ''));
       }else {
         Swal.fire({
           icon: "error",
@@ -166,8 +168,17 @@ export class AddAssessmentComponent implements OnInit {
               if (res && res.message === 'Assessment added successfully') {
                 this.addSubmissions(res.assessmentID);
               }
+              else if (res.Failed) {
+                this.loading = false;
+                Swal.fire({
+                  icon: "error",
+                  title: "Error",
+                  text: 'Failed to add assessment',
+                });
+              }
           });
           } catch (error) {
+            this.loading = false;
             Swal.fire({
               icon: "error",
               title: "Error",
@@ -208,7 +219,7 @@ export class AddAssessmentComponent implements OnInit {
               if (fileName.endsWith('.pdf')) {
                 promises.push(
                   zipEntry.async('arraybuffer').then((pdfData) => {
-                    this.processSubmissionPDF(new Uint8Array(pdfData), assessmentID, firstName, lastName, studentNumber);
+                    this.processSubmissionPDF(new Uint8Array(pdfData), assessmentID, firstName, lastName, studentNumber, folderName);
                     this.router.navigateByUrl('/dashboard');
                   })
                 );
@@ -270,14 +281,15 @@ export class AddAssessmentComponent implements OnInit {
    * If the response is successful, a success message is displayed.
    * If the response is unsuccessful, an error message is displayed.
    */
-  processSubmissionPDF(pdfData: Uint8Array, assessmentID: number, firstName: string, lastName: string, studentNumber: string): void {
+  processSubmissionPDF(pdfData: Uint8Array, assessmentID: number, firstName: string, lastName: string, studentNumber: string, folderName:string): void {
     const submissionInfo = {
       AssessmentID: assessmentID,
       SubmissionPDF: pdfData,
       StudentNum: studentNumber,
       StudentName: firstName,
       StudentSurname: lastName,
-      SubmissionStatus: 'Unmarked' // Default status is unmarked until the marker marks the submission
+      SubmissionStatus: 'Unmarked', // Default status is unmarked until the marker marks the submission
+      SubmissionFolderName: folderName
     };
   
     try {
@@ -483,5 +495,22 @@ export class AddAssessmentComponent implements OnInit {
    */
   onDashboard(): void {
     this.router.navigateByUrl('/dashboard');
+  }
+  onMarkerChange(event: any, marker: Marker): void {
+    if (event.target.checked) {
+      // Add marker to selectedMarkers if checked
+      if (!this.selectedMarkers.includes(marker)) {
+        this.selectedMarkers.push(marker);
+      }
+    } else {
+      // Remove marker from selectedMarkers if unchecked
+      this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail);
+    }
+    // Update the form control with the selected marker emails
+    this.assessmentForm.controls['markers'].setValue(this.selectedMarkers.map(m => m.MarkerEmail));
+  }
+
+  isMarkerSelected(marker: Marker): boolean {
+    return this.selectedMarkers.some(m => m.MarkerEmail === marker.MarkerEmail);
   }
 }

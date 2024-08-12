@@ -3,7 +3,12 @@
  */
 export class Moderator{
     ModEmail: string;
-    constructor(ModEmail: string) {
+    Name:string;
+    Surname:String;
+    constructor(ModEmail: string, Name:string, Surname:String){ {
       this.ModEmail = ModEmail;
+      this.Name = Name;
+      this.Surname = Surname;
     }
   }
+}

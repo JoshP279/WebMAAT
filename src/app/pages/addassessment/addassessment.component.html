@@ -6,7 +6,7 @@
 
 <nav class="navbar">
   <div class="container">
-    <h1 class="logo"><a routerLink="'/dashboard" (click)="onDashboard()">Dashboard</a> / Add Assessment</h1>
+    <h1 class="logo"><a routerLink="'/dashboard" (click)="onDashboard()">Dashboard</a> / Add Moodle Assessment</h1>
   </div>
 </nav>
 
@@ -23,7 +23,9 @@
           <label for="moderator">Moderator</label>
           <select id="moderator" formControlName="moderator" class="form-control">
             <option value="" disabled selected>Select a moderator</option>
-            <option *ngFor="let moderator of moderators" [value]="moderator.ModEmail">{{ moderator.ModEmail }}</option>
+            <option *ngFor="let moderator of moderators" [value]="moderator.ModEmail">
+              {{ moderator.ModEmail }} ({{ moderator.Name }} {{ moderator.Surname }})
+            </option>
           </select>
     </div>
 
@@ -42,10 +44,23 @@
 
     <div class="form-group">
       <label for="markers">Markers</label>
-      <select id="markers" formControlName="markers" class="form-control" multiple>
-      <option *ngFor="let marker of markers" [value]="marker.MarkerEmail">{{ marker.MarkerEmail }}</option>
-      </select>
+      <div *ngFor="let marker of markers">
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            [id]="'marker-' + marker.MarkerEmail"
+            [value]="marker.MarkerEmail"
+            (change)="onMarkerChange($event, marker)"
+            [checked]="isMarkerSelected(marker)"
+          />
+          <label class="form-check-label" [for]="'marker-' + marker.MarkerEmail">
+            {{ marker.MarkerEmail }} ({{ marker.Name }} {{ marker.Surname }})
+          </label>
+        </div>
+      </div>
     </div>
+    
 
     <div class="form-group">
       <div class="file-upload-container">

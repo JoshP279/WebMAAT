@@ -51,33 +51,58 @@ export class DashboardComponent implements OnInit {
      * If the response is unsuccessful, an error message is displayed
      */
     onGetAssessments(email: string): void {
-      this.api.getAssessments(email).subscribe((res: any) => {
-        if (res && Array.isArray(res)) {
-          this.assessments = res;
-          this.filteredAssessments = res;
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "No Assessments found",
-          });
+      this.api.getAssessments(email).subscribe(
+        (res: any) => {
+          if (res && Array.isArray(res) && res.length > 0) {
+            this.assessments = res;
+            this.filteredAssessments = res;
+          } else {
+            // If the response is an empty array, treat it as a 404 case
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "No Assessments found",
+            });
+          }
+        },
+        (error) => {
+          if (error.status === 404) {
+            // do nothing if no assessments are found (the user has not added any assessments)
+          } else {
+            // Handle other errors (e.g., connection issues)
+            Swal.fire({
+              icon: "error",
+              title: "No connection",
+              text: "Cannot connect to server",
+            });
+          }
         }
-      }, (error) => {
-        Swal.fire({
-          icon: "error",
-          title: "No connection",
-          text: "Cannot connect to server",
-        });
-      });
+      );
     }
+    
     /**
-     * This method is used to navigate to the add-assessment page
+     * This method is used to navigate to the add-assessment page, or add-tdriveassessment page, depending on type of assessment being added
      * It stores the email in session storage
      */
-    onAddAssessment(): void{
-      this.router.navigateByUrl('/add-assessment');
-      sessionStorage.setItem('email',this.email);
+    onAddAssessment(): void {
+      sessionStorage.setItem('email', this.email);
+      Swal.fire({
+        icon: "question",
+        title: "What type of assessment would you like to add?",
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: `Moodle Assesment`,
+        denyButtonText: `Test Drive Assessment`,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.router.navigateByUrl('/add-assessment');
+        } else if (result.isDenied) {
+          this.router.navigateByUrl('/add-tdriveassesment');
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
     }
+    
     /**
      * Function to navigate to the view-assessment page
      * @param assessmentID - The ID of the assessment

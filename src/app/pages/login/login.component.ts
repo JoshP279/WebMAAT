@@ -52,7 +52,7 @@ export class LoginComponent {
           sessionStorage.setItem('email', email);
           this.router.navigateByUrl('/dashboard');
         } else if (res.MarkerRole == 'Admin'){
-          Swal.fire(res.MarkerRole);
+          this.router.navigateByUrl('/admin');
         } else {
           Swal.fire({
             icon: "error",

@@ -4,6 +4,8 @@ import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ViewAssessmentComponent } from './pages/viewassessment/viewassessment.component';
 import { AddAssessmentComponent } from './pages/addassessment/addassessment.component';
 import { EditAssessmentComponent } from './pages/editassessment/editassessment.component';
+import { AddTdriveAssessmentComponent } from './pages/addtdriveassessment/addtdriveassessment.component';
+import { AdminComponent } from './pages/admin/admin.component';
 
 export const routes: Routes = [
     {
@@ -28,5 +30,13 @@ export const routes: Routes = [
     {
         path:'edit-assessment',
         component:EditAssessmentComponent
+    },
+    {
+        path:'add-tdriveassesment',
+        component:AddTdriveAssessmentComponent
+    },
+    {
+        path:'admin',
+        component:AdminComponent
     }
 ];
