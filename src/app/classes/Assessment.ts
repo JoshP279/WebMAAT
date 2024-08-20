@@ -5,6 +5,7 @@ export class Assessment {
     numMarked: number;
     totalSubmissions: number;
     modEmail: string;
+    assessmentType: string;
   
     public constructor(
       assessmentID: number,
@@ -12,7 +13,8 @@ export class Assessment {
       assessmentName: string,
       numMarked: number,
       totalSubmissions: number,
-      modEmail: string
+      modEmail: string,
+      assessmentType: string
     ) {
       this.assessmentID = assessmentID;
       this.moduleCode = moduleCode;
@@ -20,5 +22,6 @@ export class Assessment {
       this.numMarked = numMarked;
       this.totalSubmissions = totalSubmissions;
       this.modEmail = modEmail;
+      this.assessmentType = assessmentType;
     }
   }

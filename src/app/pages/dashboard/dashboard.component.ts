@@ -111,12 +111,13 @@ export class DashboardComponent implements OnInit {
      * @param modEmail - The email of the moderator
      * This method is used to navigate to the view-assessment page, where the relevant submissions are displayed for that assessment
      */
-    onViewAsssessment(assessmentID:number,assessmentName:string, moduleCode:string, modEmail:string): void{
+    onViewAsssessment(assessmentID:number,assessmentName:string, moduleCode:string, modEmail:string, assesmentType: string): void{
       this.router.navigateByUrl('/view-assessment)')
       sessionStorage.setItem('assessmentID',assessmentID.toString());
       sessionStorage.setItem('assessmentName',assessmentName);
       sessionStorage.setItem('assessmentModule',moduleCode);
       sessionStorage.setItem('modEmail', modEmail);
+      sessionStorage.setItem('assessmentType', assesmentType);
     }
 
     /**

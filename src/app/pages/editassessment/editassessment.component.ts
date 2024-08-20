@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../../API/api.service';
-import { Lecturer} from '../../classes/Lecturer';
+import JSZip, { file } from 'jszip';
+import { Submission } from '../../classes/Submission';
 import { Module } from '../../classes/Module';
 import { Marker } from '../../classes/Marker';
 import { Moderator } from '../../classes/Moderator';
@@ -24,6 +25,7 @@ export class EditAssessmentComponent implements OnInit {
   assessmentName: string = '';
   assessmentID: number = 0;
   email = '';
+  assessmentType = '';
   loading: boolean = false;
   assessmentForm: FormGroup;
   modules: Module[] = [];
@@ -33,6 +35,8 @@ export class EditAssessmentComponent implements OnInit {
   selectedMarkers: Marker[] = [];
   TotalMark: number = 0;
   selectedMemoFile: File | null = null;
+  selectedSubmissionsFile: File | null = null;
+  submissions: Submission[] = [];
 
   /**
    * @param fb - The form builder service for creating form controls
@@ -43,6 +47,7 @@ export class EditAssessmentComponent implements OnInit {
     const storedAssessmentID = sessionStorage.getItem('assessmentID');
     const storedAssessmentName = sessionStorage.getItem('assessmentName');
     const storedEmail = sessionStorage.getItem('email');
+    const storedAssessmentType = sessionStorage.getItem('assessmentType');
     if (storedAssessmentID !== null) {
       this.assessmentID = parseInt(storedAssessmentID, 0);
     }
@@ -52,13 +57,17 @@ export class EditAssessmentComponent implements OnInit {
     if (storedEmail !== null) {
       this.email = storedEmail;
     }
+    if (storedAssessmentType !== null){
+      this.assessmentType = storedAssessmentType;
+    }
     this.assessmentForm = this.fb.group({
       assessmentName: ['', Validators.required],
       module: ['', Validators.required],
       moderator: ['', Validators.required],
       markers: [[], Validators.required],
       totalMarks: [null, [Validators.required, Validators.pattern(/^[1-9]\d*$/)]],
-      selectedFile: [null, Validators.required]
+      selectedMFile: [null, Validators.required],
+      selectedSFile: [null, Validators.required]
     });
   }
 
@@ -74,8 +83,28 @@ export class EditAssessmentComponent implements OnInit {
     this.getModules();
     this.getModerators();
     this.getMarkers();
+    this.getSubmissions(this.assessmentID);
+
   }
 
+  
+    /**
+   * Function to retrieve all submissions for an assessment
+   * @param assessmentID - The ID of the assessment
+   */
+    getSubmissions(assessmentID:number){
+      this.api.getSubmissions(assessmentID).subscribe((res: any) => {
+        if (res && Array.isArray(res)) {
+          this.submissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus));
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "No connection",
+            text: "Cannot connect to server",
+          });
+        }
+      });
+    }
   /**
    * Function to fetch the modules from the server.
    * This function sends a GET request to the server to fetch the modules.
@@ -148,8 +177,9 @@ export class EditAssessmentComponent implements OnInit {
  */
   onSubmit(): void {
     if (this.assessmentForm.valid) {
+      this.loading = true;
       const reader = new FileReader();
-      const file: File = this.assessmentForm.value.selectedFile;
+      const file: File = this.assessmentForm.value.selectedMFile;
       if (file) {
         reader.onloadend = async () => {
           const fileData = reader.result as ArrayBuffer;
@@ -166,23 +196,16 @@ export class EditAssessmentComponent implements OnInit {
             TotalNumSubmissions: 0
           };
           try {
-            console.log('edits assessment');
             this.api.editAssessment(assessmentInfo).subscribe((res: any) => {
               if (res && res.message === 'Assessment edited successfully') {
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Success',
-                  text: 'Assessment updated successfully!',
-                  toast: true,
-                  position: 'bottom-end',
-                  showConfirmButton: false,
-                  timer: 3000
-                });
+                this.updateSubmissions(this.assessmentID);
+                this.loading = false;
               }
               this.router.navigateByUrl('/dashboard');
             });
           } catch (error) {
-            alert('Failed to add assessment. Please try again.');
+            this.loading = false;
+            Swal.fire('Error', 'Failed to load data', 'error');
           }
         };
 
@@ -190,6 +213,144 @@ export class EditAssessmentComponent implements OnInit {
       }
     }
   }
+
+  updateSubmissions(assessmentID: number): void {
+    if (this.selectedSubmissionsFile) {
+      const zip = new JSZip();
+        const existingStudentNumbers = this.submissions.map(sub => sub.studentNumber);
+        this.selectedSubmissionsFile.arrayBuffer()
+          .then((zipFileData) => zip.loadAsync(zipFileData))
+          .then((zipContents) => {
+            const promises: Promise<void>[] = [];
+            zip.forEach((relativePath, zipEntry) => {
+              const pathParts = relativePath.split('/');
+              if (pathParts.length > 1) {
+                const folderName = pathParts[0];
+                const fileName = pathParts[pathParts.length - 1];
+                const [firstName, lastName, studentNumber] = this.extractInfoFromFolderName(folderName, fileName);
+  
+                if (fileName.endsWith('.pdf')) {
+                  promises.push(
+                    zipEntry.async('arraybuffer').then((pdfData) => {
+                      const submissionExists = existingStudentNumbers.includes(studentNumber);
+                      const submissionID = this.submissions.find(sub => sub.studentNumber === studentNumber)?.submissionID;
+                      if (submissionExists && submissionID) {
+                        this.updateSubmission(
+                          new Uint8Array(pdfData), 
+                          assessmentID, 
+                          submissionID,
+                          firstName, 
+                          lastName, 
+                          studentNumber, 
+                          folderName
+                      );
+                      
+                      } else {
+                        this.processSubmissionPDF(new Uint8Array(pdfData), assessmentID, firstName, lastName, studentNumber, folderName);
+                      }
+                    })
+                  );
+                }
+              }
+            });
+  
+            return Promise.all(promises);
+          })
+          .then(() => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Assessment edited successfully!',
+            });
+            this.loading = false;
+          })
+          .catch((error) => {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: 'Failed to extract ZIP file. Please ensure the ZIP file is structured correctly. Error: ' + error,
+            });
+            this.loading = false;
+          });
+    }
+  }
+
+  updateSubmission(pdfData: Uint8Array, assessmentID: number, submissionID: number, firstName: string, lastName: string, studentNumber: string, folderName:string): void {
+    const submissionInfo = {
+      AssessmentID: assessmentID,
+      SubmissionID: submissionID,
+      SubmissionPDF: pdfData,
+      StudentNum: studentNumber,
+      StudentName: firstName,
+      StudentSurname: lastName,
+      SubmissionStatus: 'Unmarked', // Default status is unmarked until the marker marks the submission
+      SubmissionFolderName: folderName
+    };
+  
+    try {
+      this.api.updateSubmission(submissionInfo).subscribe((res: any) => {
+        if (res && res.message === 'Submission edited successfully') {
+          console.log(`Submission edited for ${firstName} ${lastName} (${studentNumber})`);
+        }
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: 'Failed to add submissions',
+      });
+    }
+  }
+  processSubmissionPDF(pdfData: Uint8Array, assessmentID: number, firstName: string, lastName: string, studentNumber: string, folderName:string): void {
+    const submissionInfo = {
+      AssessmentID: assessmentID,
+      SubmissionPDF: pdfData,
+      StudentNum: studentNumber,
+      StudentName: firstName,
+      StudentSurname: lastName,
+      SubmissionStatus: 'Unmarked', // Default status is unmarked until the marker marks the submission
+      SubmissionFolderName: folderName
+    };
+  
+    try {
+      this.api.addSubmission(submissionInfo).subscribe((res: any) => {
+        if (res && res.message === 'Submission added successfully') {
+          console.log(`Submission added for ${firstName} ${lastName} (${studentNumber})`);
+        }
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: 'Failed to add submissions',
+      });
+    }
+  }
+    /**
+   * 
+   * @param folderName - The name of the folder containing the submission. This folder name is parsed to extract student number, name and surname.
+   * @returns - A tuple containing the student number, first name and last name of the student.
+   */
+    extractInfoFromFolderName(folderName: string, fileName: string): [string, string, string] {
+      if (this.assessmentType == 'TDrive'){
+        const [name, surname] = folderName.split('-').slice(0, 2);   
+        let studentNumber = fileName.split('-')[1];
+        studentNumber = studentNumber.replace('.pdf', '');
+        return [name, surname, studentNumber];
+      }else{
+        let [studentNumber, name] = folderName.split('-');
+        studentNumber = studentNumber.slice(1);
+        const nameParts = name.split('_')[0].split(' ');
+        console.log(nameParts.length)
+        if (nameParts.length <= 2) {
+          return [nameParts[0], nameParts[1], studentNumber];
+        }
+        const lastName = nameParts.slice(-2).join(' ');
+        const firstName = nameParts.slice(0, -2).join(' ');
+        return [firstName, lastName, studentNumber];
+      }
+  }
+
   /**
    * Function to check if a file is a PDF file.
    * @param file - The file to check if it is a PDF file
@@ -330,4 +491,53 @@ export class EditAssessmentComponent implements OnInit {
   isMarkerSelected(marker: Marker): boolean {
     return this.selectedMarkers.some(m => m.MarkerEmail === marker.MarkerEmail);
   }
+
+  /**
+   * Function to handle the dropping of a zip file for the submissions.
+   * @param event - The drag event object for when a file is dropped
+   * This function is called when a file is dropped for the submissions.
+   * If the file is a ZIP file, the file is stored in the selectedSubmissionsFile variable.
+   * If the file is not a ZIP file, an error message is displayed.
+   */
+  onSubmissionsDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer?.files[0];
+    if (file && this.isZIP(file)) {
+      this.selectedSubmissionsFile = file;
+      this.assessmentForm.patchValue({
+        selectedSFile: file
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid File Type",
+        text: 'Please select a zip file',
+      });
+    }
+    this.removeDragOverClass();
+  }
+
+    /**
+   * Function to handle the selection of a file for the submissions.
+   * @param event - The event object for the file input
+   * This function is called when a file is selected for the submissions.
+   * If the file is a ZIP file, the file is stored in the selectedSubmissionsFile variable.
+   * If the file is not a ZIP file, an error message is displayed.
+   */
+    onSubmissionsFileSelected(event: any): void {
+      const file: File = event.target.files[0];
+      if (file && this.isZIP(file)) {
+        this.selectedSubmissionsFile = file;
+        this.assessmentForm.patchValue({
+          selectedSFile: file
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Invalid File Type",
+          text: 'Please select a zip file',
+        });
+      }
+    }
 }

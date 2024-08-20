@@ -161,7 +161,8 @@ export class AddAssessmentComponent implements OnInit {
             ModEmail: this.assessmentForm.value.moderator,
             TotalMark: this.assessmentForm.value.totalMarks,
             NumSubmissionsMarked: 0,
-            TotalNumSubmissions: 0
+            TotalNumSubmissions: 0,
+            AssessmentType: 'Moodle'
           };
           try {
             this.api.addAssessment(assessmentInfo).subscribe((res: any) => {
@@ -263,9 +264,9 @@ export class AddAssessmentComponent implements OnInit {
     studentNumber = studentNumber.slice(1);
     const nameParts = name.split('_')[0].split(' ');
     console.log(nameParts.length)
-    if (nameParts.length <= 2) {//This case handles names with only 2 parts (e.g. John Doe)
+    if (nameParts.length <= 2) {
       return [nameParts[0], nameParts[1], studentNumber];
-    }//This case handles names with more than 2 parts (e.g. John Doe Smith)
+    }
     const lastName = nameParts.slice(-2).join(' ');
     const firstName = nameParts.slice(0, -2).join(' ');
     return [firstName, lastName, studentNumber];

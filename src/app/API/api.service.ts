@@ -49,6 +49,9 @@ export class ApiService {
   addSubmission(submissionForm: any): Observable<any> {
     return this.http.put(`${this.baseUrl}/addSubmission`, submissionForm);
   }
+  updateSubmission(submissionForm: any): Observable<any>{
+    return this.http.put(`${this.baseUrl}/editSubmission`, submissionForm);
+  }
   getMarkedSubmission(submissionID: number): Observable<any> {
     return this.http.get(`${this.baseUrl}/markedSubmission?SubmissionID=${submissionID}`);
   }

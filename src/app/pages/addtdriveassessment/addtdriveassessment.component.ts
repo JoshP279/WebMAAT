@@ -6,7 +6,7 @@ import { Marker } from '../../classes/Marker';
 import { Moderator } from '../../classes/Moderator';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import JSZip from 'jszip';
+import JSZip, { file } from 'jszip';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -56,7 +56,7 @@ export class AddTdriveAssessmentComponent implements OnInit {
    */
   ngOnInit(): void {
     const storedEmail = sessionStorage.getItem('email');
-    if (storedEmail != null){
+    if (storedEmail != null) {
       this.email = storedEmail;
       this.fetchData();
     }
@@ -67,6 +67,8 @@ export class AddTdriveAssessmentComponent implements OnInit {
     this.getModerators();
     this.getMarkers();
   }
+
+
   /**
    * Function to fetch the modules from the server.
    * This function sends a GET request to the server to fetch the modules.
@@ -161,7 +163,8 @@ export class AddTdriveAssessmentComponent implements OnInit {
             ModEmail: this.assessmentForm.value.moderator,
             TotalMark: this.assessmentForm.value.totalMarks,
             NumSubmissionsMarked: 0,
-            TotalNumSubmissions: 0
+            TotalNumSubmissions: 0,
+            AssessmentType: 'TDrive'
           };
           try {
             this.api.addAssessment(assessmentInfo).subscribe((res: any) => {
@@ -205,12 +208,12 @@ export class AddTdriveAssessmentComponent implements OnInit {
             if (pathParts.length > 1) {
               const folderName = pathParts[0];
               const fileName = pathParts[pathParts.length - 1];
-              const [firstName, lastName, studentNumber] = this.extractInfoFromFolderName(folderName);
+              const [firstName, lastName, studentNumber] = this.extractInfoFromFolderName(folderName, fileName);
               console.log(`Folder: ${folderName}, FirstName: ${firstName}, LastName: ${lastName}, StudentNumber: ${studentNumber}`);
               if (fileName.endsWith('.pdf')) {
                 promises.push(
                   zipEntry.async('arraybuffer').then((pdfData) => {
-                    this.processSubmissionPDF(new Uint8Array(pdfData), assessmentID, firstName, lastName, studentNumber);
+                    this.processSubmissionPDF(new Uint8Array(pdfData), assessmentID, firstName, lastName, studentNumber, folderName);
                     this.router.navigateByUrl('/dashboard');
                   })
                 );
@@ -249,18 +252,15 @@ export class AddTdriveAssessmentComponent implements OnInit {
    * @param folderName - The name of the folder containing the submission. This folder name is parsed to extract student number, name and surname.
    * @returns - A tuple containing the student number, first name and last name of the student.
    */
-  extractInfoFromFolderName(folderName: string): [string, string, string] {
-    let [studentNumber, name] = folderName.split('-');
-    studentNumber = studentNumber.slice(1);
-    const nameParts = name.split('_')[0].split(' ');
-    console.log(nameParts.length)
-    if (nameParts.length <= 2) {//This case handles names with only 2 parts (e.g. John Doe)
-      return [nameParts[0], nameParts[1], studentNumber];
-    }//This case handles names with more than 2 parts (e.g. John Doe Smith)
-    const lastName = nameParts.slice(-2).join(' ');
-    const firstName = nameParts.slice(0, -2).join(' ');
-    return [firstName, lastName, studentNumber];
-  }
+  extractInfoFromFolderName(folderName: string, fileName: string): [string, string, string] {
+    console.log(fileName);
+    const [name, surname] = folderName.split('-').slice(0, 2);   
+    let studentNumber = fileName.split('-')[1];
+    studentNumber = studentNumber.replace('.pdf', '');
+    return [name, surname, studentNumber];
+}
+
+  
   /**
    * Function to process the submission PDF.
    * @param pdfData - The PDF data of the submission
@@ -272,14 +272,15 @@ export class AddTdriveAssessmentComponent implements OnInit {
    * If the response is successful, a success message is displayed.
    * If the response is unsuccessful, an error message is displayed.
    */
-  processSubmissionPDF(pdfData: Uint8Array, assessmentID: number, firstName: string, lastName: string, studentNumber: string): void {
+  processSubmissionPDF(pdfData: Uint8Array, assessmentID: number, firstName: string, lastName: string, studentNumber: string, folderName:string): void {
     const submissionInfo = {
       AssessmentID: assessmentID,
       SubmissionPDF: pdfData,
       StudentNum: studentNumber,
       StudentName: firstName,
       StudentSurname: lastName,
-      SubmissionStatus: 'Unmarked' // Default status is unmarked until the marker marks the submission
+      SubmissionStatus: 'Unmarked', // Default status is unmarked until the marker marks the submission
+      SubmissionFolderName: folderName
     };
   
     try {
