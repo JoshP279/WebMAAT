@@ -12,7 +12,7 @@ import { Observable } from 'rxjs';
  * The methods in this class are used to make requests to the server
  */
 export class ApiService {
-  private baseUrl = 'http://10.0.0.110:3306';
+  private baseUrl = 'http://10.112.49.6:3306';
 
   constructor(private http: HttpClient) { }
 
@@ -96,5 +96,11 @@ export class ApiService {
   }
   deleteAssessment(assessmentID: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/deleteAssessment?AssessmentID=${assessmentID}`);
-}
+  }
+  getAssessmentInfo(assessmentID: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/assessmentInfo?AssessmentID=${assessmentID}`);
+  }
+  updateSubmissionInfo(submissionInfo: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/updateSubmission`, submissionInfo);
+  }
 }

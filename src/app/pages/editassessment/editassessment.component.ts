@@ -80,14 +80,44 @@ export class EditAssessmentComponent implements OnInit {
   }
   
   fetchData(): void {
-    this.getModules();
-    this.getModerators();
-    this.getMarkers();
-    this.getSubmissions(this.assessmentID);
-
+    this.getModules()
+      .then(() => this.getModerators())
+      .then(() => this.getMarkers())
+      .then(() => this.getSubmissions(this.assessmentID))
+      .then(() => this.getAssessmentInfo())
+      .catch((error) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load data. Please try again.',
+        });
+      });
   }
-
   
+  getAssessmentInfo(): void {
+    this.api.getAssessmentInfo(this.assessmentID).subscribe((res: any) => {
+      if (res) {
+            const markerEmails = JSON.parse(res.MarkerEmail);
+            console.log(markerEmails);
+
+            this.selectedMarkers = this.markers.filter(marker => markerEmails.includes(marker.MarkerEmail));
+            this.assessmentForm.patchValue({
+              assessmentName: res.AssessmentName,
+              module: res.ModuleCode,
+              moderator: res.ModEmail,
+              totalMarks: res.TotalMark,
+              markers: this.selectedMarkers.map(marker => marker.MarkerEmail) // Preselect markers
+            });
+          }
+        else{
+          Swal.fire({
+            icon: "error",
+            title: "No connection",
+            text: "Cannot connect to server",
+        });
+    }
+  });
+}
     /**
    * Function to retrieve all submissions for an assessment
    * @param assessmentID - The ID of the assessment
@@ -111,12 +141,12 @@ export class EditAssessmentComponent implements OnInit {
    * If the response is successful, the modules are stored in the modules array.
    * If the response is unsuccessful, an error message is displayed.
    */
-  getModules(){
-    this.api.getModules().subscribe((res: any) => {
+  getModules(): Promise<void> {
+    return this.api.getModules().toPromise().then((res: any) => {
       if (res && Array.isArray(res)) {
         this.modules = res.map((module: any) => new Module(module.ModuleCode, module.ModuleName));
       } else {
-        alert('No modules found or invalid response format.');
+        throw new Error('No modules found or invalid response format.');
       }
     });
   }
@@ -128,18 +158,18 @@ export class EditAssessmentComponent implements OnInit {
    * If the response is unsuccessful, an error message is displayed.
    * The logged in user's email is filtered out from the list of moderators, as a lecturer cannot select themselves as a moderator.
    */
-  getModerators(){
-    this.api.getModerators().subscribe((res: any) => {
+  getModerators(): Promise<void> {
+    return this.api.getModerators().toPromise().then((res: any) => {
       if (res && Array.isArray(res)) {
-        console.log(this.email);
         this.moderators = res
-                              .filter((moderator: any) => moderator.ModEmail !== this.email)
-                              .map((moderator: any) => new Moderator(moderator.ModEmail, moderator.Name, moderator.Surname));
+          .filter((moderator: any) => moderator.ModEmail !== this.email)
+          .map((moderator: any) => new Moderator(moderator.ModEmail, moderator.Name, moderator.Surname));
       } else {
-        alert('No moderators found or invalid response format.');
+        throw new Error('No moderators found or invalid response format.');
       }
     });
   }
+  
 
   /**
    * Function to fetch the markers from the server.
@@ -476,15 +506,12 @@ export class EditAssessmentComponent implements OnInit {
   }
   onMarkerChange(event: any, marker: Marker): void {
     if (event.target.checked) {
-      // Add marker to selectedMarkers if checked
       if (!this.selectedMarkers.includes(marker)) {
         this.selectedMarkers.push(marker);
       }
     } else {
-      // Remove marker from selectedMarkers if unchecked
       this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail);
     }
-    // Update the form control with the selected marker emails
     this.assessmentForm.controls['markers'].setValue(this.selectedMarkers.map(m => m.MarkerEmail));
   }
 

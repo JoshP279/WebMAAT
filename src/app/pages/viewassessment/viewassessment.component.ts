@@ -175,33 +175,121 @@ export class ViewAssessmentComponent implements OnInit {
     const csvContent = header + rows;
     return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   }
+  
+  onEditStudentSubmission(submission: Submission): void {
+    Swal.fire({
+      title: 'Edit Submission',
+      html: `
+        <div>
+          <label for="studentName">Student Name: </label>
+          <input id="studentName" class="swal2-input" value="${submission?.studentName}">
+        </div>
+        <div>
+          <label for="studentSurname">Student Surname: </label>
+          <input id="studentSurname" class="swal2-input" value="${submission?.studentSurname}">
+        </div>
+        <div>
+          <label for="submissionMark">Submission Mark: </label>
+          <input id="submissionMark" class="swal2-input" type="number" value="${submission?.submissionMark}">
+        </div>
+      `,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: `Edit Submission`,
+      denyButtonText: `Download Marked Submission`,
+      preConfirm: () => {
+        const studentName = (document.getElementById('studentName') as HTMLInputElement).value;
+        const studentSurname = (document.getElementById('studentSurname') as HTMLInputElement).value;
+        const submissionMark = (document.getElementById('submissionMark') as HTMLInputElement).value;
+  
+        if (!submissionMark || !studentName || !studentSurname) {
+          Swal.showValidationMessage('Please fill in all fields');
+          return false;
+        }
+        return {
+          studentName: studentName,
+          studentSurname: studentSurname,
+          submissionMark: Number(submissionMark)
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const updatedName = result.value?.studentName;
+        const updatedSurname = result.value?.studentSurname;
+        const updatedMark = result.value?.submissionMark;
+  
+        const submissionForm = {
+          SubmissionID: submission.submissionID,
+          StudentName: updatedName,
+          StudentSurname: updatedSurname,
+          SubmissionMark: updatedMark
+        };
+  
+        this.api.updateSubmissionInfo(submissionForm).subscribe(() => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Updated',
+            text: 'Submission mark has been updated.',
+            position: 'bottom-end',
+            timer: 1000,
+            showConfirmButton: false,
+            timerProgressBar: true
+          });
+  
+          submission.studentName = updatedName;
+          submission.studentSurname = updatedSurname;
+          submission.submissionMark = updatedMark;
+        }, (error) => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to update submission mark. Please try again.',
+          });
+        });
+  
+      } else if (result.isDenied) {
+        this.onExportMarkedSubmission(submission.submissionID, submission.submissionStatus);
+      }
+    });
+  }
+  
+  
   /**
    * Function to export the marked submission as a PDF file
    * @param submissionID - The ID of the submission
    * @param submissionStatus - The status of the submission (Marked, Unmarked, In Progress)
    * The function calls the getMarkedSubmission method to retrieve the marked submission as a PDF file, only if the submission is marked
    */
-  onExportMarkedSubmission(submissionID: number, submissionStatus:string): void {
-    if (submissionStatus === 'Marked'){
-      this.api.getMarkedSubmission(submissionID).subscribe((res: any) => {
-        if (res && res.pdfData && res.pdfData.type === 'Buffer') {
-          const byteArray = new Uint8Array(res.pdfData.data);
-          const blob = new Blob([byteArray], { type: 'application/pdf' });
-          const link = document.createElement('a');
-          link.href = window.URL.createObjectURL(blob);
-          link.download = `MarkedSubmission_${submissionID}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        } else {
+  onExportMarkedSubmission(submissionID: number, submissionStatus: string): void {
+    if (submissionStatus === 'Marked') {
+      this.api.getMarkedSubmission(submissionID).subscribe(
+        (res: any) => {
+          if (res && res.pdfData && res.pdfData.type === 'Buffer') {
+            const byteArray = new Uint8Array(res.pdfData.data);
+            const blob = new Blob([byteArray], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = `MarkedSubmission_${submissionID}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Error!",
+              text: "Unable to retrieve marked submission",
+            });
+          }
+        },
+        (error) => {
           Swal.fire({
             icon: "error",
             title: "Error!",
-            text: "Unable to retrieve marked submission",
+            text: "Unable to retrieve marked submission. The submission may not exist or the server is unavailable.",
           });
         }
-      });
-    }else{
+      );
+    } else {
       Swal.fire({
         icon: "warning",
         title: "Not yet!",
@@ -209,6 +297,8 @@ export class ViewAssessmentComponent implements OnInit {
       });
     }
   }
+  
+  
 
   onEditAssessment(){
     sessionStorage.setItem('email', this.email);

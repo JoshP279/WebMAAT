@@ -20,7 +20,7 @@
              [(ngModel)]="searchTerm" (input)="onSearch()">
     </div>
     <div class="submissions-container">
-      <div *ngFor="let submission of filteredSubmissions" class="submissions-item" (click)="onExportMarkedSubmission(submission.submissionID, submission.submissionStatus)">
+      <div *ngFor="let submission of filteredSubmissions" class="submissions-item" (click)="onEditStudentSubmission(submission)">
         <b>{{submission.studentNumber}}</b>
         <br>
         <span>{{submission.studentName}} {{submission.studentSurname}}</span>
