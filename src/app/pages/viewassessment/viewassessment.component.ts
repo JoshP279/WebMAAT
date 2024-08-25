@@ -80,6 +80,7 @@ export class ViewAssessmentComponent implements OnInit {
       if (res && Array.isArray(res)) {
         this.submissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus));
         this.filteredSubmissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus));
+        this.calculateStats();
       } else {
         Swal.fire({
           icon: "error",
@@ -189,8 +190,8 @@ export class ViewAssessmentComponent implements OnInit {
           <input id="studentSurname" class="swal2-input" value="${submission?.studentSurname}">
         </div>
         <div>
-          <label for="submissionMark">Submission Mark: </label>
-          <input id="submissionMark" class="swal2-input" type="number" value="${submission?.submissionMark}">
+          <label for="submissionMark">Submission Mark (%): </label \n>
+          <input id="submissionMark" class="swal2-input" type="number" value="${submission?.submissionMark}" min="0" max="100">
         </div>
       `,
       showDenyButton: true,
@@ -200,17 +201,44 @@ export class ViewAssessmentComponent implements OnInit {
       preConfirm: () => {
         const studentName = (document.getElementById('studentName') as HTMLInputElement).value;
         const studentSurname = (document.getElementById('studentSurname') as HTMLInputElement).value;
-        const submissionMark = (document.getElementById('submissionMark') as HTMLInputElement).value;
+        const submissionMarkInput = (document.getElementById('submissionMark') as HTMLInputElement);
+        const submissionMark = submissionMarkInput.value;
   
-        if (!submissionMark || !studentName || !studentSurname) {
-          Swal.showValidationMessage('Please fill in all fields');
+        if (!submissionMark) {
+          Swal.showValidationMessage('Submission mark cannot be empty');
           return false;
         }
+  
+        const submissionMarkNumber = Number(submissionMark);
+  
+        // Check if the submission mark is within the valid range
+        if (submissionMarkNumber < 0 || submissionMarkNumber > 100 || isNaN(submissionMarkNumber)) {
+          Swal.showValidationMessage('Submission mark must be a number between 0 and 100');
+          return false;
+        }
+  
         return {
           studentName: studentName,
           studentSurname: studentSurname,
-          submissionMark: Number(submissionMark)
+          submissionMark: submissionMarkNumber
         };
+      },
+      willOpen: () => {
+        const submissionMarkInput = document.getElementById('submissionMark') as HTMLInputElement;
+        
+        // Add an input event listener to handle manual typing and restrict the input to numbers only
+        submissionMarkInput.addEventListener('input', () => {
+          submissionMarkInput.value = submissionMarkInput.value.replace(/[^0-9]/g, ''); // Remove any non-numeric characters
+          let value = parseInt(submissionMarkInput.value, 10);
+          if (isNaN(value)) {
+            value = 0;
+          }
+          if (value < 0) {
+            submissionMarkInput.value = '0';
+          } else if (value > 100) {
+            submissionMarkInput.value = '100';
+          }
+        });
       }
     }).then((result) => {
       if (result.isConfirmed) {
@@ -231,7 +259,7 @@ export class ViewAssessmentComponent implements OnInit {
             title: 'Updated',
             text: 'Submission mark has been updated.',
             position: 'bottom-end',
-            timer: 1000,
+            timer: 2000,
             showConfirmButton: false,
             timerProgressBar: true
           });
@@ -252,6 +280,7 @@ export class ViewAssessmentComponent implements OnInit {
       }
     });
   }
+  
   
   
   /**
