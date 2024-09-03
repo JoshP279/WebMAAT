@@ -39,6 +39,11 @@
     <input type="text" id="lecturerName" [(ngModel)]="lecturerName" placeholder="Name" class="form-control">
     <input type="text" id="lecturerSurname" [(ngModel)]="lecturerSurname" placeholder="Surname" class="form-control">
     <input type="text" id="lecturerPassword" [(ngModel)]="lecturerPassword" placeholder="Password" class="form-control">
+    <select id="lecturerMarkingStyle" [(ngModel)]="lecturerMarkingStyle" class="form-control">
+      <option value="" disabled selected hidden>Right Handed Ticks</option>
+      <option value="Right Handed Ticks">Right Handed Ticks</option>
+      <option value="Left Handed Ticks">Left Handed Ticks</option>
+    </select>
     <button class="btn" (click)="onAddLecturer()">Add Lecturer</button>
   </div>
 
@@ -59,6 +64,11 @@
     <input type="text" id="markerName" [(ngModel)]="markerName" placeholder="Demi Name" class="form-control">
     <input type="text" id="markerSurname" [(ngModel)]="markerSurname" placeholder="Demi Surame" class="form-control">
     <input type="text" id="markerPassword" [(ngModel)]="markerPassword" placeholder="Demi Password" class="form-control">
+    <select id="markerMarkingStyle" [(ngModel)]="markerMarkingStyle" class="form-control">
+      <option value="" disabled selected hidden>Right Handed Ticks</option>
+      <option value="Right Handed Ticks">Right Handed Ticks</option>
+      <option value="Left Handed Ticks">Left Handed Ticks</option>
+    </select>
     <button class="btn" (click)="onAddDemiMarker()">Add Marker</button>
   </div>
 

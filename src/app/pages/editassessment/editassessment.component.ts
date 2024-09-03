@@ -125,7 +125,7 @@ export class EditAssessmentComponent implements OnInit {
     getSubmissions(assessmentID:number){
       this.api.getSubmissions(assessmentID).subscribe((res: any) => {
         if (res && Array.isArray(res)) {
-          this.submissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus));
+          this.submissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus, submission.submissionFolderName));
         } else {
           Swal.fire({
             icon: "error",
@@ -184,7 +184,7 @@ export class EditAssessmentComponent implements OnInit {
       if (res && Array.isArray(res)) {
         this.markers = res
                           .filter((marker: any) => marker.MarkerEmail !== this.email)
-                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, ''));
+                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
       }else{
         alert('No markers found or invalid response format.');
       }

@@ -6,7 +6,7 @@
 
 <nav class="navbar">
   <div class="container">
-    <h1 class="logo"><a routerLink="'/dashboard" (click)="onDashboard()">Dashboard</a> / Add Moodle Assessment</h1>
+    <h1 class="logo"><a routerLink="'/dashboard" (click)="onDashboard()">Dashboard</a> / Add {{assessmentType}} Assessment</h1>
   </div>
 </nav>
 
@@ -79,7 +79,7 @@
     <div class="form-group">
       <div class="file-upload-container">
         <br>
-        <label for="submissionsInput">Upload the submissions (in ZIP file format from Moodle):</label>
+        <label for="submissionsInput">Upload the submissions (in ZIP file format from {{assessmentType}}):</label>
         <div class="dropzone" (drop)="onSubmissionsDrop($event)" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (click)="submissionsInput.click()">
           <p>Drag and drop a file here, or click to select a file</p>
         </div>

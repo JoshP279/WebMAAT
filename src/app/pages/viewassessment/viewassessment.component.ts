@@ -5,7 +5,8 @@ import { ApiService } from '../../API/api.service';
 import { Submission } from '../../classes/Submission';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
-
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-viewassessment',
@@ -54,6 +55,7 @@ export class ViewAssessmentComponent implements OnInit {
       const storedEmail = sessionStorage.getItem('email');
       if (storedAssessmentID !== null) {
         this.assessmentID = parseInt(storedAssessmentID);
+        this.getSubmissions(this.assessmentID);
       }
       if (storedAssessmentName !== null) {
         this.assessmentName = storedAssessmentName;
@@ -68,7 +70,6 @@ export class ViewAssessmentComponent implements OnInit {
         this.email = storedEmail;
       }
     }
-    this.getSubmissions(this.assessmentID);
   }
 
   /**
@@ -78,8 +79,8 @@ export class ViewAssessmentComponent implements OnInit {
   getSubmissions(assessmentID:number){
     this.api.getSubmissions(assessmentID).subscribe((res: any) => {
       if (res && Array.isArray(res)) {
-        this.submissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus));
-        this.filteredSubmissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus));
+        this.submissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus, submission.submissionFolderName));
+        this.filteredSubmissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus, submission.submissionFolderName));
         this.calculateStats();
       } else {
         Swal.fire({
@@ -98,10 +99,10 @@ export class ViewAssessmentComponent implements OnInit {
     if (this.submissions.length === 0) return; //if there are no submissions, return
 
     const marks = this.submissions.map(sub => sub.submissionMark); //list of numbers containing each submission mark
-    this.averageMark = this.calculateAverage(marks);
-    this.medianMark = this.calculateMedian(marks);
-    this.highestMark = Math.max(...marks);
-    this.lowestMark = Math.min(...marks);
+    this.averageMark = Math.round(this.calculateAverage(marks) * 100) / 100;
+    this.medianMark = Math.round(this.calculateMedian(marks) * 100) / 100;
+    this.highestMark = Math.round(Math.max(...marks) * 100) / 100;
+    this.lowestMark = Math.round(Math.min(...marks) * 100) / 100;
   }
   /**
    * Function to calculate the average of all submissions
@@ -190,8 +191,8 @@ export class ViewAssessmentComponent implements OnInit {
           <input id="studentSurname" class="swal2-input" value="${submission?.studentSurname}">
         </div>
         <div>
-          <label for="submissionMark">Submission Mark (%): </label \n>
-          <input id="submissionMark" class="swal2-input" type="number" value="${submission?.submissionMark}" min="0" max="100">
+          <label for="submissionMark">Submission Mark (%): </label>
+          <input id="submissionMark" class="swal2-input" type="text" value="${submission?.submissionMark}">
         </div>
       `,
       showDenyButton: true,
@@ -211,8 +212,7 @@ export class ViewAssessmentComponent implements OnInit {
   
         const submissionMarkNumber = Number(submissionMark);
   
-        // Check if the submission mark is within the valid range
-        if (submissionMarkNumber < 0 || submissionMarkNumber > 100 || isNaN(submissionMarkNumber)) {
+        if (isNaN(submissionMarkNumber) || submissionMarkNumber < 0 || submissionMarkNumber > 100) {
           Swal.showValidationMessage('Submission mark must be a number between 0 and 100');
           return false;
         }
@@ -225,26 +225,30 @@ export class ViewAssessmentComponent implements OnInit {
       },
       willOpen: () => {
         const submissionMarkInput = document.getElementById('submissionMark') as HTMLInputElement;
-        
-        // Add an input event listener to handle manual typing and restrict the input to numbers only
+  
+        // Add an input event listener to handle manual typing and restrict the input to valid numeric characters only
         submissionMarkInput.addEventListener('input', () => {
-          submissionMarkInput.value = submissionMarkInput.value.replace(/[^0-9]/g, ''); // Remove any non-numeric characters
-          let value = parseInt(submissionMarkInput.value, 10);
-          if (isNaN(value)) {
-            value = 0;
+          // Allow only numbers and one decimal point
+          submissionMarkInput.value = submissionMarkInput.value.replace(/[^0-9.]/g, '');
+  
+          // Prevent multiple decimal points
+          if ((submissionMarkInput.value.match(/\./g) || []).length > 1) {
+            submissionMarkInput.value = submissionMarkInput.value.slice(0, -1);
           }
-          if (value < 0) {
-            submissionMarkInput.value = '0';
-          } else if (value > 100) {
+  
+          // Ensure value is not greater than 100
+          let value = parseFloat(submissionMarkInput.value);
+  
+          if (!isNaN(value) && value > 100) {
             submissionMarkInput.value = '100';
           }
         });
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        const updatedName = result.value?.studentName;
-        const updatedSurname = result.value?.studentSurname;
-        const updatedMark = result.value?.submissionMark;
+        const updatedName = result.value ? result.value.studentName : '';
+        const updatedSurname = result.value ? result.value.studentSurname : '';
+        const updatedMark = result.value && 'submissionMark' in result.value ? result.value.submissionMark : 0;
   
         const submissionForm = {
           SubmissionID: submission.submissionID,
@@ -280,6 +284,7 @@ export class ViewAssessmentComponent implements OnInit {
       }
     });
   }
+  
   
   
   
@@ -340,50 +345,113 @@ export class ViewAssessmentComponent implements OnInit {
    * Only marked submissions are published
    */
   onStudentsPublishResults(): void {
+    // Filter submissions to include only those that are marked
+  const markedSubmissions = this.submissions.filter(submission => submission.submissionStatus === 'Marked');
+
+  // Check if there are any marked submissions
+  if (markedSubmissions.length === 0) {
+    // If no submissions are marked, show an alert and exit the function
     Swal.fire({
-      title: "Are you sure?",
-      text: "This will email all marked students their assessed script.",
       icon: "warning",
+      title: "No Marked Submissions",
+      text: "There are no marked submissions to publish.",
+    });
+    return; // Exit the function early
+  }
+    const submissionListHTML = this.submissions
+      .filter(submission => submission.submissionStatus === 'Marked')
+      .map(submission => `
+        <div style="display: flex; align-items: center; justify-content: flex-start; padding: 5px;">
+          <input type="checkbox" id="submission-${submission.submissionID}" class="swal2-checkbox" style="margin: 0; vertical-align: middle;" checked>
+          <label for="submission-${submission.submissionID}" style="margin-left: 8px; vertical-align: middle;">${submission.studentName} ${submission.studentSurname} - ${submission.studentNumber}</label>
+        </div>
+      `)
+      .join('');
+  
+    Swal.fire({
+      title: "Select Submissions to Publish",
+      html: `
+        <div>
+          <p>Select the submissions you want to publish results for:</p>
+          ${submissionListHTML}
+        </div>
+      `,
       showCancelButton: true,
       confirmButtonColor: "#000080",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, publish results"
+      confirmButtonText: "Publish Selected",
+      cancelButtonText: "Cancel",
+      preConfirm: () => {
+        // Get the Swal modal's content container
+        const content = Swal.getHtmlContainer();
+        if (!content) {
+          Swal.showValidationMessage('Unable to find submission checkboxes.');
+          return;
+        }
+  
+        // Collect IDs of selected submissions
+        const selectedSubmissions = this.submissions.filter(submission => {
+          const checkbox = content.querySelector(`#submission-${submission.submissionID}`) as HTMLInputElement;
+          return checkbox && checkbox.checked;
+        });
+  
+        if (selectedSubmissions.length === 0) {
+          Swal.showValidationMessage('Please select at least one submission to publish.');
+          return false;
+        }
+  
+        return selectedSubmissions;
+      }
     }).then((result) => {
-      if (result.isConfirmed) {
-        this.sendStudentEmails();
+      if (result.isConfirmed && result.value) {
+        this.sendStudentEmails(result.value);
         Swal.fire({
           title: "Results published!",
-          text: "All marked students have been emailed their assessed script.",
+          text: "Selected marked students have been emailed their assessed script.",
           icon: "success"
         });
       }
     });
   }
-
-  sendStudentEmails(): void {
-    for (const sub of this.submissions){
-      if (sub.submissionStatus === 'Marked'){
+  
+  sendStudentEmails(selectedSubmissions: Submission[]): void {
+    for (const sub of selectedSubmissions) {
+      if (sub.submissionStatus === 'Marked') {
         this.sendEmail(sub.submissionID, sub.studentNumber);
       }
     }
   }
 
   onModeratorPublishResults(): void {
+    // Prepare the Swal dialog for confirmation
     Swal.fire({
       title: "Are you sure?",
-      text: "This will email the moderator the results of the assessment.",
+      html: `
+        <div>
+          <p>This will email the moderator (${this.modEmail}) the results of the assessment.</p>
+        </div>
+      `,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#000080",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, publish results"
+      confirmButtonText: "Yes, publish results",
+      cancelButtonText: "Cancel",
+      preConfirm: () => {
+        // Check if the moderator email is available
+        if (!this.modEmail) {
+          Swal.showValidationMessage('Moderator email is missing.');
+          return undefined; // Return undefined to prevent proceeding
+        }
+        return true;
+      }
     }).then((result) => {
       if (result.isConfirmed) {
-        this.sendModeratorEmail();
+        this.sendModeratorEmail(); // Call function to send email to moderator
       }
     });
   }
-
+  
   /**
    * Function to send the moderator an email with the results of the assessment
    * The email is sent with the results as a CSV attachment
@@ -400,8 +468,10 @@ export class ViewAssessmentComponent implements OnInit {
     formData.append('text', 'Please find the attached results for an assessment you are moderating.\n' +
                             'This is an automated email. Please contact the module lecturer if you have any queries.');
     formData.append('csv', csvBlob, 'assessment_results.csv');
-    this.api.sendModeratorEmail(formData).subscribe((res: any) => {
-    if (res && res.message === 'Failed to send email') {
+    
+    this.api.sendModeratorEmail(formData).subscribe(
+      (res: any) => {
+        if (res && res.message === 'Failed to send email') {
           Swal.fire({
             icon: 'error',
             title: 'Failed to send email',
@@ -414,14 +484,17 @@ export class ViewAssessmentComponent implements OnInit {
             icon: "success"
           });
         }
-      }, (error) => {
+      },
+      (error) => {
         Swal.fire({
           icon: 'error',
           title: 'Error',
           text: 'An error occurred while sending the email. Please try again later.',
         });
-      });
-    }
+      }
+    );
+  }
+  
 
   /**
    * Function to send an email to a student with the marked submission
@@ -454,4 +527,61 @@ export class ViewAssessmentComponent implements OnInit {
     }
     );
   }
+
+  onExportZippedSubmissions(): void {
+    Swal.fire({
+      title: "Are you sure?",
+      html: `
+        <div>
+          <p>This will download the assessed scripts in the same folder structure when the assessment was added.</p>
+        </div>
+      `,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#000080",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, download ZIP file",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const zip = new JSZip();
+        const promises: Promise<any>[] = [];
+
+        this.submissions.filter(submission => submission.submissionStatus ==='Marked').forEach(submission => {
+          const promise = this.api.getMarkedSubmission(submission.submissionID).toPromise().then(
+            (res: any) => {
+              if (res && res.pdfData && res.pdfData.type === 'Buffer') {
+                console.log(res);
+                const byteArray = new Uint8Array(res.pdfData.data);
+                zip.file(`${submission.submissionFolderName}/${submission.studentNumber}.pdf`, byteArray);
+              } else {
+                console.error(`Failed to retrieve submission with student number: ${submission.studentNumber}`);
+              }
+            },
+            (error) => {
+              console.error(`Error fetching submission with student number: ${submission.studentNumber}`, error);
+            }
+          );
+          promises.push(promise);
+        });
+  
+       
+      Promise.all(promises).then(() => {
+        zip.generateAsync({ type: "blob" })
+          .then((content) => {
+            saveAs(content, `${this.assessmentModule + '_' + this.assessmentName}.zip`);
+
+          })
+          .catch((err) => {
+            Swal.fire({
+              icon: "error",
+              title: "Error!",
+              text: "Unable to generate ZIP file.",
+            });
+            console.error("Error generating ZIP file:", err);
+          });
+      });
+    }
+  });
+}
 }

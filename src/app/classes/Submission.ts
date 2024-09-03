@@ -10,13 +10,15 @@ export class Submission{
     studentName:string;
     studentSurname:string;
     submissionStatus:string;
+    submissionFolderName: string;
     
-    constructor(SubmissionID:number,StudentNumber: string, SubmissionMark: number, StudentFirstName:string, StudentLastName:string, SubmissionStatus:string){
+    constructor(SubmissionID:number,StudentNumber: string, SubmissionMark: number, StudentFirstName:string, StudentLastName:string, SubmissionStatus:string, submissionFolderName: string){
         this.submissionID = SubmissionID;
         this.studentNumber = StudentNumber;
         this.submissionMark = SubmissionMark;
         this.studentName = StudentFirstName;
         this.studentSurname = StudentLastName;
         this.submissionStatus = SubmissionStatus;
+        this.submissionFolderName = submissionFolderName;
     }
 }

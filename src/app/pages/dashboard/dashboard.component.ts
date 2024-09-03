@@ -69,7 +69,6 @@ export class DashboardComponent implements OnInit {
           if (error.status === 404) {
             // do nothing if no assessments are found (the user has not added any assessments)
           } else {
-            // Handle other errors (e.g., connection issues)
             Swal.fire({
               icon: "error",
               title: "No connection",
@@ -95,10 +94,13 @@ export class DashboardComponent implements OnInit {
         denyButtonText: `Test Drive Assessment`,
       }).then((result) => {
         if (result.isConfirmed) {
+          sessionStorage.setItem('assessmentType', 'Moodle');
           this.router.navigateByUrl('/add-assessment');
         } else if (result.isDenied) {
-          this.router.navigateByUrl('/add-tdriveassesment');
+          sessionStorage.setItem('assessmentType', 'Test Drive');
+          this.router.navigateByUrl('/add-assessment');
         } else if (result.dismiss === Swal.DismissReason.cancel) {
+          // do nothing if the user cancels the operation
         }
       });
     }

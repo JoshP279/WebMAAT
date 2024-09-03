@@ -33,6 +33,7 @@ export class AddAssessmentComponent implements OnInit {
   TotalMark: number = 0;
   selectedMemoFile: File | null = null;
   selectedSubmissionsFile: File | null = null;
+  assessmentType: string = '';
 
   /**
    * @param fb - The form builder service for creating form controls
@@ -56,8 +57,10 @@ export class AddAssessmentComponent implements OnInit {
    */
   ngOnInit(): void {
     const storedEmail = sessionStorage.getItem('email');
-    if (storedEmail != null){
+    const assessmentType = sessionStorage.getItem('assessmentType');
+    if (storedEmail != null && assessmentType != null){
       this.email = storedEmail;
+      this.assessmentType = assessmentType;
       this.fetchData();
     }
   }
@@ -123,7 +126,7 @@ export class AddAssessmentComponent implements OnInit {
       if (res && Array.isArray(res)) {
         this.markers = res
                           .filter((marker: any) => marker.MarkerEmail !== this.email)
-                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, ''));
+                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
       }else {
         Swal.fire({
           icon: "error",
@@ -162,7 +165,7 @@ export class AddAssessmentComponent implements OnInit {
             TotalMark: this.assessmentForm.value.totalMarks,
             NumSubmissionsMarked: 0,
             TotalNumSubmissions: 0,
-            AssessmentType: 'Moodle'
+            AssessmentType: this.assessmentType
           };
           try {
             this.api.addAssessment(assessmentInfo).subscribe((res: any) => {
@@ -215,7 +218,13 @@ export class AddAssessmentComponent implements OnInit {
             if (pathParts.length > 1) {
               const folderName = pathParts[0];
               const fileName = pathParts[pathParts.length - 1];
-              const [firstName, lastName, studentNumber] = this.extractInfoFromFolderName(folderName);
+              var [firstName, lastName, studentNumber] = ['', '', ''];
+              if (this.assessmentType === 'Moodle') {
+                [firstName, lastName, studentNumber] = this.extractInfoFromMoodleFolderName(folderName);
+              }
+              else{
+                [firstName, lastName, studentNumber] = this.extractInfoFromTDriveFolderName(folderName, fileName);
+              }
               console.log(`Folder: ${folderName}, FirstName: ${firstName}, LastName: ${lastName}, StudentNumber: ${studentNumber}`);
               if (fileName.endsWith('.pdf')) {
                 promises.push(
@@ -259,7 +268,7 @@ export class AddAssessmentComponent implements OnInit {
    * @param folderName - The name of the folder containing the submission. This folder name is parsed to extract student number, name and surname.
    * @returns - A tuple containing the student number, first name and last name of the student.
    */
-  extractInfoFromFolderName(folderName: string): [string, string, string] {
+  extractInfoFromMoodleFolderName(folderName: string): [string, string, string] {
     let [studentNumber, name] = folderName.split('-');
     studentNumber = studentNumber.slice(1);
     const nameParts = name.split('_')[0].split(' ');
@@ -271,6 +280,14 @@ export class AddAssessmentComponent implements OnInit {
     const firstName = nameParts.slice(0, -2).join(' ');
     return [firstName, lastName, studentNumber];
   }
+
+  extractInfoFromTDriveFolderName(folderName: string, fileName: string): [string, string, string] {
+    console.log(fileName);
+    const [name, surname] = folderName.split('-').slice(0, 2);   
+    let studentNumber = fileName.split('-')[1];
+    studentNumber = studentNumber.replace('.pdf', '');
+    return [name, surname, studentNumber];
+}
   /**
    * Function to process the submission PDF.
    * @param pdfData - The PDF data of the submission

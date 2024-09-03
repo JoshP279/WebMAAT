@@ -27,11 +27,13 @@ export class AdminComponent implements OnInit {
   lecturerName: string = '';
   lecturerSurname: string = '';
   lecturerPassword: string = '';
+  lecturerMarkingStyle: string = 'Right Handed Ticks';
 
   markerEmail: string = '';
   markerName: string = '';
   markerSurname: string = '';
   markerPassword: string = '';
+  markerMarkingStyle: string = 'Right Handed Ticks';
 
   modules: Module[] = [];
   lecturers: Lecturer[] = [];
@@ -163,15 +165,16 @@ export class AdminComponent implements OnInit {
   onAddLecturer(): void {
     if (this.lecturerEmail && this.lecturerName && this.lecturerSurname && this.lecturerPassword) {
       this.loading = true;
-      this.api.addLecturer(new Lecturer(this.lecturerEmail, this.lecturerName, this.lecturerSurname, this.lecturerPassword)).subscribe(
+      this.api.addLecturer(new Lecturer(this.lecturerEmail, this.lecturerName, this.lecturerSurname, this.lecturerPassword, this.lecturerMarkingStyle)).subscribe(
         res => {
           this.loading = false;
           Swal.fire('Success', 'Lecturer added successfully', 'success');
-          this.lecturers.push(new Lecturer(this.lecturerEmail, this.lecturerName, this.lecturerSurname, this.lecturerPassword));
+          this.lecturers.push(new Lecturer(this.lecturerEmail, this.lecturerName, this.lecturerSurname, this.lecturerPassword, this.lecturerMarkingStyle));
           this.lecturerEmail = '';
           this.lecturerName = '';
           this.lecturerSurname = '';
           this.lecturerPassword = '';
+          this.lecturerMarkingStyle = 'Right Handed Ticks';
         },
         err => {
           this.loading = false;
@@ -189,30 +192,35 @@ export class AdminComponent implements OnInit {
       html:
         `<input id="lecturer-name" class="swal2-input" placeholder="Lecturer Name" value="${lecturer.Name}" style="width: 350px;">` +
         `<input id="lecturer-surname" class="swal2-input" placeholder="Lecturer Surname" value="${lecturer.Surname}" style="width: 350px;">` +
-        `<input id="lecturer-password" class="swal2-input" placeholder="Lecturer Password" value="${lecturer.Password}" style="width: 350px;">`,
+        `<input id="lecturer-password" class="swal2-input" placeholder="Lecturer Password" value="${lecturer.Password}" style="width: 350px;">`+
+        `<select id="lecturer-markingStyle" class="swal2-input" style="width: 350px; margin-top: 10px;">
+              <option value="" disabled ${lecturer.MarkingStyle === '' ? 'selected' : ''} hidden>Select Marking Style</option>
+              <option value="Right Handed Ticks" ${lecturer.MarkingStyle === 'Right Handed Ticks' ? 'selected' : ''}>Right Handed Ticks</option>
+              <option value="Left Handed Ticks" ${lecturer.MarkingStyle === 'Left Handed Ticks' ? 'selected' : ''}>Left Handed Ticks</option>
+          </select>`,
       focusConfirm: false,
       showCancelButton: true,
       cancelButtonColor: '#d33',
       preConfirm: () => {
-        const email = (document.getElementById('lecturer-email') as HTMLInputElement).value;
+        const email = lecturer.MarkerEmail;
         const name = (document.getElementById('lecturer-name') as HTMLInputElement).value;
         const surname = (document.getElementById('lecturer-surname') as HTMLInputElement).value;
         const password = (document.getElementById('lecturer-password') as HTMLInputElement).value;
-  
-        if (!email || !name || !surname || !password) {
+        const markingStyle = (document.getElementById('lecturer-markingStyle') as HTMLSelectElement).value;
+        if (!email || !name || !surname || !password || !markingStyle) {
           Swal.showValidationMessage('Please fill out all fields');
           return null;
         }
   
-        return { email, name, surname, password };
+        return { email, name, surname, password, markingStyle};
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        const { email, name, surname, password } = result.value!;
+        const { email, name, surname, password, markingStyle} = result.value!;
         
         // Logic to update the lecturer using the new values
         this.loading = true;
-        this.api.editLecturer(email, name, surname, password).subscribe(
+        this.api.editLecturer(email, name, surname, password, markingStyle).subscribe(
           res => {
             this.loading = false;
             Swal.fire('Success', 'Lecturer updated successfully', 'success');
@@ -220,6 +228,7 @@ export class AdminComponent implements OnInit {
             lecturer.Name = name;
             lecturer.Surname = surname;
             lecturer.Password = password;
+            lecturer.MarkingStyle = markingStyle;
           },
           err => {
             this.loading = false;
@@ -261,15 +270,16 @@ export class AdminComponent implements OnInit {
   onAddDemiMarker(): void {
     if (this.markerEmail && this.markerName && this.markerSurname && this.markerPassword) {
       this.loading = true;
-      this.api.addMarker(new Marker(this.markerEmail, this.markerName, this.markerSurname, this.markerPassword)).subscribe(
+      this.api.addMarker(new Marker(this.markerEmail, this.markerName, this.markerSurname, this.markerPassword, this.markerMarkingStyle)).subscribe(
         res => {
           this.loading = false;
           Swal.fire('Success', 'Marker added successfully', 'success');
-          this.markers.push(new Marker(this.markerEmail, this.markerName, this.markerSurname, this.markerPassword));
+          this.markers.push(new Marker(this.markerEmail, this.markerName, this.markerSurname, this.markerPassword, this.markerMarkingStyle));
           this.markerEmail = '';
           this.markerName = '';
           this.markerSurname = '';
           this.markerPassword = '';
+          this.markerMarkingStyle = 'RIght Handed Ticks';
         },
         err => {
           this.loading = false;
@@ -285,9 +295,14 @@ export class AdminComponent implements OnInit {
     Swal.fire({
       title: 'Edit Marker',
       html:
-        `<input id="marker-name" class="swal2-input" placeholder="Marker Name" value="${marker.Name}" style="width: 300px;">` +
-        `<input id="marker-surname" class="swal2-input" placeholder="Marker Surname" value="${marker.Surname}" style="width: 300px;">` +
-        `<input id="marker-password" class="swal2-input" placeholder="Marker Password" value="${marker.Password}" style="width: 300px;">`,
+        `<input id="marker-name" class="swal2-input" placeholder="Marker Name" value="${marker.Name}" style="width: 350px;">` +
+        `<input id="marker-surname" class="swal2-input" placeholder="Marker Surname" value="${marker.Surname}" style="width: 350px;">` +
+        `<input id="marker-password" class="swal2-input" placeholder="Marker Password" value="${marker.Password}" style="width: 350px;">` +
+        `<select id="marker-markingStyle" class="swal2-input" style="width: 350px; margin-top: 10px;">
+            <option value="" disabled ${marker.MarkingStyle === '' ? 'selected' : ''} hidden>Select Marking Style</option>
+            <option value="Right Handed Ticks" ${marker.MarkingStyle === 'Right Handed Ticks' ? 'selected' : ''}>Right Handed Ticks</option>
+            <option value="Left Handed Ticks" ${marker.MarkingStyle === 'Left Handed Ticks' ? 'selected' : ''}>Left Handed Ticks</option>
+        </select>`,
       focusConfirm: false,
       showCancelButton: true,
       cancelButtonColor: '#d33',
@@ -296,20 +311,20 @@ export class AdminComponent implements OnInit {
         const name = (document.getElementById('marker-name') as HTMLInputElement).value;
         const surname = (document.getElementById('marker-surname') as HTMLInputElement).value;
         const password = (document.getElementById('marker-password') as HTMLInputElement).value;
-  
+        const markingStyle = (document.getElementById('marker-markingStyle') as HTMLSelectElement).value;
         if (!name || !surname || !password) {
           Swal.showValidationMessage('Please fill out all fields');
           return null;
         }
   
-        return {email, name, surname, password };
+        return {email, name, surname, password, markingStyle};
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        const {email, name, surname, password } = result.value!;
+        const {email, name, surname, password, markingStyle} = result.value!;
         
         this.loading = true;
-        this.api.editMarker(email, name, surname, password).subscribe(
+        this.api.editMarker(email, name, surname, password, markingStyle).subscribe(
           res => {
             this.loading = false;
             Swal.fire('Success', 'Marker updated successfully', 'success');
@@ -317,6 +332,7 @@ export class AdminComponent implements OnInit {
             marker.Name = name;
             marker.Surname = surname;
             marker.Password = password
+            marker.MarkingStyle = markingStyle
           },
           err => {
             this.loading = false;

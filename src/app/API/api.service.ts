@@ -12,8 +12,7 @@ import { Observable } from 'rxjs';
  * The methods in this class are used to make requests to the server
  */
 export class ApiService {
-  private baseUrl = 'http://10.112.49.6:3306';
-
+  private baseUrl = 'http://10.0.0.107:3306';
   constructor(private http: HttpClient) { }
 
   login(loginObj: any): Observable<any> {
@@ -79,9 +78,17 @@ export class ApiService {
   addLecturer(lecturerForm: any): Observable<any> {
     return this.http.put(`${this.baseUrl}/addLecturer`, lecturerForm);
   }
-  editLecturer(email:string, name: string, surname:string, password: string): Observable<any> {
-    return this.http.put(`${this.baseUrl}/editLecturer?MarkerEmail=${email}&Name=${name}&Surname=${surname}&Password=${password}`, email);
-  }
+  editLecturer(email: string, name: string, surname: string, password: string, markingStyle: string): Observable<any> {
+    const lecturerData = {
+        MarkerEmail: email,
+        Name: name,
+        Surname: surname,
+        Password: password,
+        MarkingStyle: markingStyle
+    };
+    return this.http.put(`${this.baseUrl}/editLecturer`, lecturerData);
+}
+
   deleteModule(moduleCode: string): Observable<any> {
     return this.http.delete(`${this.baseUrl}/deleteModule?ModuleCode=${moduleCode}`);
   }
@@ -91,8 +98,15 @@ export class ApiService {
   deleteModerator(email: string): Observable<any> {
     return this.http.delete(`${this.baseUrl}/deleteModerator?ModeratorEmail=${email}`);
   }
-  editMarker(email: string, name: string, surname: string, password: string): Observable<any> {
-    return this.http.put(`${this.baseUrl}/editMarker?MarkerEmail=${email}&Name=${name}&Surname=${surname}&Password=${password}`, email);
+  editMarker(email: string, name: string, surname: string, password: string, markingStyle: string): Observable<any> {
+    const markerData = {
+        MarkerEmail: email,
+        Name: name,
+        Surname: surname,
+        Password: password,
+        MarkingStyle: markingStyle
+    };
+    return this.http.put(`${this.baseUrl}/editMarker`, markerData);
   }
   deleteAssessment(assessmentID: number): Observable<any> {
     return this.http.delete(`${this.baseUrl}/deleteAssessment?AssessmentID=${assessmentID}`);

@@ -35,32 +35,49 @@ export class LoginComponent {
    */
   onLogin() {
     this.api.login(this.loginObj).pipe(
-      //.pipe() is used to chain multiple operators (functions in this case) together. catchError() is an operator that catches errors on the observable stream and handles them.
-      catchError((error) => {
-        console.log(error);
-        Swal.fire({
-          icon: "error",
-          title: "No connection",
-          text: "Cannot connect to server",
-        });
-        return of(null); // Return an observable with null or a default value to continue the observable chain
-      })
+        catchError((error) => {
+            // Check if there is no response or status is 0 (network issues)
+            if (!error.status || error.status === 0) {
+                Swal.fire({
+                    icon: "error",
+                    title: "No connection",
+                    text: "Cannot connect to server",
+                });
+                return of(null); // Return null to prevent further execution
+            } else {
+                // If the error has a response, we log it and return an observable with the error object
+                console.error('Error occurred:', error);
+                return of(error.error); // Return error object for handling in subscribe
+            }
+        })
     ).subscribe((res: any) => {
-      if (res) {
-        if(res.MarkerRole == 'Lecturer'){
-          const email = this.loginObj.MarkerEmail;
-          sessionStorage.setItem('email', email);
-          this.router.navigateByUrl('/dashboard');
-        } else if (res.MarkerRole == 'Admin'){
-          this.router.navigateByUrl('/admin');
+        if (res && res.MarkerRole) {
+            if (res.MarkerRole === 'Lecturer') {
+                const email = this.loginObj.MarkerEmail;
+                sessionStorage.setItem('email', email);
+                this.router.navigateByUrl('/dashboard');
+            } else if (res.MarkerRole === 'Admin') {
+                this.router.navigateByUrl('/admin');
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Invalid Role",
+                    text: "You do not have the correct role to access this page.",
+                });
+            }
+        } else if (res && res.error === 'Invalid username or password') {
+            Swal.fire({
+                icon: "error",
+                title: "Invalid Credentials",
+                text: "Incorrect email or password.",
+            });
         } else {
-          Swal.fire({
-            icon: "error",
-            title: "Invalid Credentials",
-            text: "You do not have the correct role to access this page.",
-          });
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Unable to connect to the server, please try again later.",
+            });
         }
-      }
     });
-  }
+}
 }
