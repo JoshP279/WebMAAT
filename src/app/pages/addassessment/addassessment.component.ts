@@ -34,7 +34,8 @@ export class AddAssessmentComponent implements OnInit {
   selectedMemoFile: File | null = null;
   selectedSubmissionsFile: File | null = null;
   assessmentType: string = '';
-
+  isHoveringMemo: boolean = false;
+  isHoveringSubmissions: boolean = false
   /**
    * @param fb - The form builder service for creating form controls
    * @param api  - The API service for making HTTP requests to the server
@@ -56,8 +57,8 @@ export class AddAssessmentComponent implements OnInit {
    * This function fetches the modules, moderators and markers from the server.
    */
   ngOnInit(): void {
-    const storedEmail = sessionStorage.getItem('email');
-    const assessmentType = sessionStorage.getItem('assessmentType');
+    const storedEmail = localStorage.getItem('email');
+    const assessmentType = localStorage.getItem('assessmentType');
     if (storedEmail != null && assessmentType != null){
       this.email = storedEmail;
       this.assessmentType = assessmentType;
@@ -124,9 +125,15 @@ export class AddAssessmentComponent implements OnInit {
   getMarkers(){
     this.api.getMarkers().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
-        this.markers = res
-                          .filter((marker: any) => marker.MarkerEmail !== this.email)
-                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+        this.markers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+        const lecturerMarker = this.markers.find(marker => marker.MarkerEmail === this.email);
+  
+        if (lecturerMarker) {
+          this.selectedMarkers.push(lecturerMarker);
+        }
+        this.assessmentForm.patchValue({
+          markers: this.selectedMarkers.map(marker => marker.MarkerEmail),
+        });
       }else {
         Swal.fire({
           icon: "error",
@@ -475,7 +482,19 @@ export class AddAssessmentComponent implements OnInit {
     event.stopPropagation();
     this.removeDragOverClass();
   }
+  onDragLeaveMemo(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.removeDragOverClass();
+    this.isHoveringMemo = false;
+  }
 
+  onDragLeaveSubmissions(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.removeDragOverClass();
+    this.isHoveringSubmissions = false;
+  }
   /**
    * Function to add the dragover class to the dropzone.
    * This function adds the dragover class to the dropzone element.
@@ -502,7 +521,7 @@ export class AddAssessmentComponent implements OnInit {
    * The user's email is removed from the session storage, and the user is redirected to the login page.
    */
   onLogout(): void {
-    sessionStorage.removeItem('email');
+    localStorage.removeItem('email');
     this.router.navigateByUrl('/login');
   }
 
@@ -515,6 +534,17 @@ export class AddAssessmentComponent implements OnInit {
     this.router.navigateByUrl('/dashboard');
   }
   onMarkerChange(event: any, marker: Marker): void {
+    // Prevent removing lecturer marker from selectedMarkers
+    if (marker.MarkerEmail === this.email) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: 'You cannot deselect yourself as a marker!',
+      });
+      event.target.checked = true;
+      return;
+    }
+  
     if (event.target.checked) {
       // Add marker to selectedMarkers if checked
       if (!this.selectedMarkers.includes(marker)) {
@@ -524,9 +554,11 @@ export class AddAssessmentComponent implements OnInit {
       // Remove marker from selectedMarkers if unchecked
       this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail);
     }
+  
     // Update the form control with the selected marker emails
     this.assessmentForm.controls['markers'].setValue(this.selectedMarkers.map(m => m.MarkerEmail));
   }
+  
 
   isMarkerSelected(marker: Marker): boolean {
     return this.selectedMarkers.some(m => m.MarkerEmail === marker.MarkerEmail);

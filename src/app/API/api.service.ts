@@ -39,7 +39,7 @@ export class ApiService {
   getMarkers(): Observable<any> {
     return this.http.get(`${this.baseUrl}/markers`);
   }
-  getDemiMarkers(): Observable<any> {
+  getAssistantMarkers(): Observable<any> {
     return this.http.get(`${this.baseUrl}/demiMarkers`);
   }
   addAssessment(assessmentForm: any): Observable<any> {

@@ -50,7 +50,7 @@
   <h3>Existing Lecturers</h3>
   <ul>
     <li *ngFor="let lecturer of lecturers">
-      {{ lecturer.MarkerEmail }} - {{ lecturer.Name }} {{ lecturer.Surname}}
+      {{ lecturer.Name }} {{ lecturer.Surname}} - {{ lecturer.MarkerEmail }} 
       <div class = "action-buttons">
         <button class="btn btn-sm btn-edit" (click)="onEditLecturer(lecturer)">Edit</button>
         <button class="btn btn-sm btn-delete" (click)="onDeleteLecturer(lecturer.MarkerEmail)">Delete</button>
@@ -59,26 +59,26 @@
   </ul>
 
   <div class="form-group">
-    <label for="marker"><h3>Add Demi Marker</h3></label>
-    <input type="email" id="markerEmail" [(ngModel)]="markerEmail" placeholder="Demi Email" class="form-control">
-    <input type="text" id="markerName" [(ngModel)]="markerName" placeholder="Demi Name" class="form-control">
-    <input type="text" id="markerSurname" [(ngModel)]="markerSurname" placeholder="Demi Surame" class="form-control">
-    <input type="text" id="markerPassword" [(ngModel)]="markerPassword" placeholder="Demi Password" class="form-control">
+    <label for="marker"><h3>Add Assistant Marker</h3></label>
+    <input type="email" id="markerEmail" [(ngModel)]="markerEmail" placeholder="Assistant Email" class="form-control">
+    <input type="text" id="markerName" [(ngModel)]="markerName" placeholder="Assistant Name" class="form-control">
+    <input type="text" id="markerSurname" [(ngModel)]="markerSurname" placeholder="Assistant Surame" class="form-control">
+    <input type="text" id="markerPassword" [(ngModel)]="markerPassword" placeholder="Assistant Password" class="form-control">
     <select id="markerMarkingStyle" [(ngModel)]="markerMarkingStyle" class="form-control">
       <option value="" disabled selected hidden>Right Handed Ticks</option>
       <option value="Right Handed Ticks">Right Handed Ticks</option>
       <option value="Left Handed Ticks">Left Handed Ticks</option>
     </select>
-    <button class="btn" (click)="onAddDemiMarker()">Add Marker</button>
+    <button class="btn" (click)="onAddAssistantMarker()">Add Marker</button>
   </div>
 
-  <h3>Existing Demi Markers</h3>
+  <h3>Existing Assistant Markers</h3>
   <ul>
     <li *ngFor="let marker of markers">
-      {{ marker.MarkerEmail }} - {{ marker.Name }} {{ marker.Surname}}
+      {{ marker.Name }} {{ marker.Surname}} - {{ marker.MarkerEmail }}
       <div class = "action-buttons">
-        <button class="btn btn-sm btn-edit" (click)="onEditDemiMarker(marker)">Edit</button>
-        <button class="btn btn-sm btn-delete" (click)="onDeleteDemiMarker(marker.MarkerEmail)">Delete</button>
+        <button class="btn btn-sm btn-edit" (click)="onEditAssistantMarker(marker)">Edit</button>
+        <button class="btn btn-sm btn-delete" (click)="onDeleteAssistantMarker(marker.MarkerEmail)">Delete</button>
       </div>
     </li>
   </ul>

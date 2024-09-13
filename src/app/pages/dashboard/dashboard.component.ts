@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, Inject } from '@angular/core';
 import { ApiService } from '../../API/api.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Assessment} from '../../classes/Assessment';
@@ -24,12 +24,14 @@ export class DashboardComponent implements OnInit {
   assessments: Assessment[] = [];
   filteredAssessments: Assessment[] = [];
   searchTerm: string = '';
+  selectedStatus: string = '';
+  sortOrder = 'asc';
 
   /**
    * @param api  - The API service for making HTTP requests to the server
    * @param router - The router service for navigating between pages
    */
-  constructor(private api: ApiService, private router:Router) { }
+  constructor(private api: ApiService, private router:Router, @Inject(PLATFORM_ID) private platformId: Object) { }
 
   /**
    * ngOnInit method
@@ -37,11 +39,13 @@ export class DashboardComponent implements OnInit {
    * It retrieves the email from session storage and calls the getAssessments method
    */
   ngOnInit(): void {
-      const storedEmail = sessionStorage.getItem('email');
+    if (isPlatformBrowser(this.platformId)) {
+      const storedEmail = localStorage.getItem('email');
       if (storedEmail != null){
         this.email = storedEmail;
         this.onGetAssessments(this.email);
       }
+    }
     }
     /**
      * This method is used to retrieve the assessments for a marker
@@ -77,6 +81,7 @@ export class DashboardComponent implements OnInit {
           }
         }
       );
+      this.sortAssessments();
     }
     
     /**
@@ -84,7 +89,7 @@ export class DashboardComponent implements OnInit {
      * It stores the email in session storage
      */
     onAddAssessment(): void {
-      sessionStorage.setItem('email', this.email);
+      localStorage.setItem('email', this.email);
       Swal.fire({
         icon: "question",
         title: "What type of assessment would you like to add?",
@@ -94,10 +99,10 @@ export class DashboardComponent implements OnInit {
         denyButtonText: `Test Drive Assessment`,
       }).then((result) => {
         if (result.isConfirmed) {
-          sessionStorage.setItem('assessmentType', 'Moodle');
+          localStorage.setItem('assessmentType', 'Moodle');
           this.router.navigateByUrl('/add-assessment');
         } else if (result.isDenied) {
-          sessionStorage.setItem('assessmentType', 'Test Drive');
+          localStorage.setItem('assessmentType', 'Test Drive');
           this.router.navigateByUrl('/add-assessment');
         } else if (result.dismiss === Swal.DismissReason.cancel) {
           // do nothing if the user cancels the operation
@@ -114,12 +119,12 @@ export class DashboardComponent implements OnInit {
      * This method is used to navigate to the view-assessment page, where the relevant submissions are displayed for that assessment
      */
     onViewAsssessment(assessmentID:number,assessmentName:string, moduleCode:string, modEmail:string, assesmentType: string): void{
+      localStorage.setItem('assessmentID',assessmentID.toString());
+      localStorage.setItem('assessmentName',assessmentName);
+      localStorage.setItem('assessmentModule',moduleCode);
+      localStorage.setItem('modEmail', modEmail);
+      localStorage.setItem('assessmentType', assesmentType);
       this.router.navigateByUrl('/view-assessment)')
-      sessionStorage.setItem('assessmentID',assessmentID.toString());
-      sessionStorage.setItem('assessmentName',assessmentName);
-      sessionStorage.setItem('assessmentModule',moduleCode);
-      sessionStorage.setItem('modEmail', modEmail);
-      sessionStorage.setItem('assessmentType', assesmentType);
     }
 
     /**
@@ -172,7 +177,7 @@ export class DashboardComponent implements OnInit {
    * It clears the session storage and navigates to the login page
    */
   onLogout(): void {
-    sessionStorage.clear();
+    localStorage.clear();
     this.router.navigateByUrl('/login');
   }
 
@@ -182,5 +187,29 @@ export class DashboardComponent implements OnInit {
    */
   onDashboard():void{
     this.router.navigateByUrl('/dashboard');
+  }
+
+  filterAssessments() {
+    console.log(this.selectedStatus);
+    
+    this.filteredAssessments = this.assessments.filter(assessment => {
+      const lecturing = assessment.modEmail !== this.email;
+      const moderating = assessment.modEmail === this.email;
+  
+      if (this.selectedStatus === 'Lecturing') {
+        return lecturing;
+      } else if (this.selectedStatus === 'Moderating') {
+        return moderating;
+      } else {
+        return true;
+      }
+    });
+  }
+  
+  sortAssessments(){
+    this.filteredAssessments.sort((a, b) => {
+      const comparison = (a.numMarked/a.totalSubmissions) - (b.numMarked/b.totalSubmissions);
+      return this.sortOrder === 'asc' ? comparison : -comparison;
+    });
   }
 }

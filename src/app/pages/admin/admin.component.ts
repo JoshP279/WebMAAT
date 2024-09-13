@@ -66,7 +66,7 @@ export class AdminComponent implements OnInit {
       this.assessments = assessments;
     });
 
-    this.api.getDemiMarkers().subscribe(markers => {
+    this.api.getAssistantMarkers().subscribe(markers => {
       this.markers = markers;
       this.loading = false;
     }, err => {
@@ -81,7 +81,15 @@ export class AdminComponent implements OnInit {
       this.api.addModule(new Module(this.moduleCode, this.moduleName)).subscribe(
         res => {
           this.loading = false;
-          Swal.fire('Success', 'Module added successfully', 'success');
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Module added successfully',
+            position: 'bottom-end',
+            timer: 2000,
+            showConfirmButton: false,
+            timerProgressBar: true
+          });
           this.modules.push(new Module(this.moduleCode, this.moduleName));
           this.moduleName = '';
           this.moduleCode = '';
@@ -123,7 +131,15 @@ export class AdminComponent implements OnInit {
         this.api.editModule(module.ModuleCode, moduleName).subscribe(
           res => {
             this.loading = false;
-            Swal.fire('Success', 'Module updated successfully', 'success');
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Module updated successfully',
+              position: 'bottom-end',
+              timer: 2000,
+              showConfirmButton: false,
+              timerProgressBar: true
+            });
             module.ModuleName = moduleName;
           },
           err => {
@@ -150,7 +166,15 @@ export class AdminComponent implements OnInit {
         this.api.deleteModule(moduleCode).subscribe(
           res => {
             this.loading = false;
-            Swal.fire('Deleted!', 'Module has been deleted.', 'success');
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Module has been deleted successfully',
+              position: 'bottom-end',
+              timer: 2000,
+              showConfirmButton: false,
+              timerProgressBar: true
+            });
             this.modules = this.modules.filter(m => m.ModuleCode !== moduleCode);
           },
           err => {
@@ -168,7 +192,15 @@ export class AdminComponent implements OnInit {
       this.api.addLecturer(new Lecturer(this.lecturerEmail, this.lecturerName, this.lecturerSurname, this.lecturerPassword, this.lecturerMarkingStyle)).subscribe(
         res => {
           this.loading = false;
-          Swal.fire('Success', 'Lecturer added successfully', 'success');
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Lecturer added successfully',
+            position: 'bottom-end',
+            timer: 2000,
+            showConfirmButton: false,
+            timerProgressBar: true
+          });
           this.lecturers.push(new Lecturer(this.lecturerEmail, this.lecturerName, this.lecturerSurname, this.lecturerPassword, this.lecturerMarkingStyle));
           this.lecturerEmail = '';
           this.lecturerName = '';
@@ -223,7 +255,15 @@ export class AdminComponent implements OnInit {
         this.api.editLecturer(email, name, surname, password, markingStyle).subscribe(
           res => {
             this.loading = false;
-            Swal.fire('Success', 'Lecturer updated successfully', 'success');
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Lecturer updated successfully',
+              position: 'bottom-end',
+              timer: 2000,
+              showConfirmButton: false,
+              timerProgressBar: true
+            });
             lecturer.MarkerEmail = email;
             lecturer.Name = name;
             lecturer.Surname = surname;
@@ -256,7 +296,15 @@ export class AdminComponent implements OnInit {
           res => {
             this.loading = false;
             this.lecturers = this.lecturers.filter(l => l.MarkerEmail !== email);
-            Swal.fire('Deleted!', 'Lecturer has been deleted.', 'success');
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Lecturer has been deleted',
+              position: 'bottom-end',
+              timer: 2000,
+              showConfirmButton: false,
+              timerProgressBar: true
+            });
           },
           err => {
             this.loading = false;
@@ -267,13 +315,21 @@ export class AdminComponent implements OnInit {
     });
   }  
 
-  onAddDemiMarker(): void {
+  onAddAssistantMarker(): void {
     if (this.markerEmail && this.markerName && this.markerSurname && this.markerPassword) {
       this.loading = true;
       this.api.addMarker(new Marker(this.markerEmail, this.markerName, this.markerSurname, this.markerPassword, this.markerMarkingStyle)).subscribe(
         res => {
           this.loading = false;
-          Swal.fire('Success', 'Marker added successfully', 'success');
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Marker added successfully',
+            position: 'bottom-end',
+            timer: 2000,
+            showConfirmButton: false,
+            timerProgressBar: true
+          });
           this.markers.push(new Marker(this.markerEmail, this.markerName, this.markerSurname, this.markerPassword, this.markerMarkingStyle));
           this.markerEmail = '';
           this.markerName = '';
@@ -291,7 +347,7 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  onEditDemiMarker(marker: Marker): void {
+  onEditAssistantMarker(marker: Marker): void {
     Swal.fire({
       title: 'Edit Marker',
       html:
@@ -327,7 +383,15 @@ export class AdminComponent implements OnInit {
         this.api.editMarker(email, name, surname, password, markingStyle).subscribe(
           res => {
             this.loading = false;
-            Swal.fire('Success', 'Marker updated successfully', 'success');
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Marker updated successfully.',
+              position: 'bottom-end',
+              timer: 2000,
+              showConfirmButton: false,
+              timerProgressBar: true
+            });
             marker.MarkerEmail = email;
             marker.Name = name;
             marker.Surname = surname;
@@ -343,7 +407,7 @@ export class AdminComponent implements OnInit {
     });
   }
   
-  onDeleteDemiMarker(email: string): void {
+  onDeleteAssistantMarker(email: string): void {
     Swal.fire({
       title: 'Are you sure?',
       text: "This action cannot be undone!",
@@ -358,7 +422,15 @@ export class AdminComponent implements OnInit {
         this.api.deleteMarker(email).subscribe(
           res => {
             this.loading = false;
-            Swal.fire('Deleted!', 'Marker has been deleted.', 'success');
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Marker has been deleted',
+              position: 'bottom-end',
+              timer: 2000,
+              showConfirmButton: false,
+              timerProgressBar: true
+            });
             this.markers = this.markers.filter(m => m.MarkerEmail !== email);
           },
           err => {
@@ -385,7 +457,15 @@ export class AdminComponent implements OnInit {
        this.api.deleteAssessment(assessmentID).subscribe(
           res => {
             this.loading = false;
-            Swal.fire('Deleted!', 'Assessment has been deleted.', 'success');
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Assessment has been deleted.',
+              position: 'bottom-end',
+              timer: 2000,
+              showConfirmButton: false,
+              timerProgressBar: true
+            });
             this.assessments = this.assessments.filter(a => a.assessmentID !== assessmentID);
           },
           err => {
@@ -398,7 +478,7 @@ export class AdminComponent implements OnInit {
   }
 
   onLogout(): void {
-    sessionStorage.clear();
+    localStorage.clear();
     this.router.navigateByUrl('/login');
   }
 }

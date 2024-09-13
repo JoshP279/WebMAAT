@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { CommonModule,isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, Inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../API/api.service';
 import { Submission } from '../../classes/Submission';
@@ -21,12 +21,15 @@ import { saveAs } from 'file-saver';
  * OnInit is implemented, to allow for retrieval of data when the component is initialized.
  */
 export class ViewAssessmentComponent implements OnInit {
+  viewMode: string = 'grid';
   assessmentID: number = 0;
   assessmentName: string = '';
   assessmentModule: string = '';
   modEmail: string = '';
   email: string = '';
   searchTerm: string = '';
+  selectedStatus: string = '';
+  sortOrder = 'asc';
   submissions: Submission[] = [];
   filteredSubmissions: Submission[] = [];
   averageMark: number = 0;
@@ -40,19 +43,19 @@ export class ViewAssessmentComponent implements OnInit {
  * OnInit is implemented, to allow for retrieval of data when the component is initialized.
  * 
  */
-  constructor(private api: ApiService,private router: Router) { }
+  constructor(private api: ApiService,private router: Router, @Inject(PLATFORM_ID) private platformId: Object) { }
   /**
    * ngOnInit method
    * This method is called when the component is initialized
    * Retrieves the assessment details from session storage and calls the getSubmissions method
    */
   ngOnInit(): void {
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      const storedAssessmentID = sessionStorage.getItem('assessmentID');
-      const storedAssessmentName = sessionStorage.getItem('assessmentName');
-      const storedAssessmentModule = sessionStorage.getItem('assessmentModule');
-      const storedAssessmentModEmail = sessionStorage.getItem('modEmail');
-      const storedEmail = sessionStorage.getItem('email');
+    if (isPlatformBrowser(this.platformId)) {
+      const storedAssessmentID = localStorage.getItem('assessmentID');
+      const storedAssessmentName = localStorage.getItem('assessmentName');
+      const storedAssessmentModule = localStorage.getItem('assessmentModule');
+      const storedAssessmentModEmail = localStorage.getItem('modEmail');
+      const storedEmail = localStorage.getItem('email');
       if (storedAssessmentID !== null) {
         this.assessmentID = parseInt(storedAssessmentID);
         this.getSubmissions(this.assessmentID);
@@ -72,6 +75,25 @@ export class ViewAssessmentComponent implements OnInit {
     }
   }
 
+  filterSubmissions() {
+    this.filteredSubmissions = this.submissions.filter(submission => {
+      const matchesStatus = this.selectedStatus === '' || submission.submissionStatus === this.selectedStatus;
+      const matchesSearch = submission.studentNumber.includes(this.searchTerm) ||
+                            submission.studentName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                            submission.studentSurname.toLowerCase().includes(this.searchTerm.toLowerCase());
+      return matchesStatus && matchesSearch;
+    });
+
+    this.sortSubmissions();
+  }
+
+  sortSubmissions() {
+    this.filteredSubmissions.sort((a, b) => {
+      const comparison = a.submissionMark - b.submissionMark;
+      return this.sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }
+
   /**
    * Function to retrieve all submissions for an assessment
    * @param assessmentID - The ID of the assessment
@@ -82,6 +104,7 @@ export class ViewAssessmentComponent implements OnInit {
         this.submissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus, submission.submissionFolderName));
         this.filteredSubmissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus, submission.submissionFolderName));
         this.calculateStats();
+        this.filterSubmissions();
       } else {
         Swal.fire({
           icon: "error",
@@ -96,14 +119,16 @@ export class ViewAssessmentComponent implements OnInit {
    * All other functions are called to calculate the average, median, highest and lowest marks
    */
   calculateStats() {
-    if (this.submissions.length === 0) return; //if there are no submissions, return
-
+    if (this.submissions.length === 0) {
+      return;
+    }
     const marks = this.submissions.map(sub => sub.submissionMark); //list of numbers containing each submission mark
     this.averageMark = Math.round(this.calculateAverage(marks) * 100) / 100;
     this.medianMark = Math.round(this.calculateMedian(marks) * 100) / 100;
     this.highestMark = Math.round(Math.max(...marks) * 100) / 100;
     this.lowestMark = Math.round(Math.min(...marks) * 100) / 100;
   }
+  
   /**
    * Function to calculate the average of all submissions
    * @param marks - The marks of the submissions
@@ -131,7 +156,7 @@ export class ViewAssessmentComponent implements OnInit {
   }
 
   onLogout(): void{
-    sessionStorage.clear();
+    localStorage.clear();
     this.router.navigateByUrl('/login');
   }
   
@@ -197,7 +222,7 @@ export class ViewAssessmentComponent implements OnInit {
       `,
       showDenyButton: true,
       showCancelButton: true,
-      confirmButtonText: `Edit Submission`,
+      confirmButtonText: `Save Changes`,
       denyButtonText: `Download Marked Submission`,
       preConfirm: () => {
         const studentName = (document.getElementById('studentName') as HTMLInputElement).value;
@@ -206,10 +231,19 @@ export class ViewAssessmentComponent implements OnInit {
         const submissionMark = submissionMarkInput.value;
   
         if (!submissionMark) {
-          Swal.showValidationMessage('Submission mark cannot be empty');
+          Swal.showValidationMessage('Submission mark cannot be empty!');
           return false;
         }
-  
+
+        if (!studentName){
+          Swal.showValidationMessage('Student name cannot be empty!');
+          return false;
+        }
+
+        if (!studentSurname){
+          Swal.showValidationMessage('Student surname cannot be empty!');
+          return false;
+        }
         const submissionMarkNumber = Number(submissionMark);
   
         if (isNaN(submissionMarkNumber) || submissionMarkNumber < 0 || submissionMarkNumber > 100) {
@@ -271,6 +305,14 @@ export class ViewAssessmentComponent implements OnInit {
           submission.studentName = updatedName;
           submission.studentSurname = updatedSurname;
           submission.submissionMark = updatedMark;
+          const originalSubmission = this.submissions.find(sub => sub.submissionID === submission.submissionID);
+          if (originalSubmission) {
+            originalSubmission.studentName = updatedName;
+            originalSubmission.studentSurname = updatedSurname;
+            originalSubmission.submissionMark = updatedMark;
+          }
+          this.sortSubmissions();
+          this.calculateStats();
         }, (error) => {
           Swal.fire({
             icon: 'error',
@@ -335,7 +377,8 @@ export class ViewAssessmentComponent implements OnInit {
   
 
   onEditAssessment(){
-    sessionStorage.setItem('email', this.email);
+    localStorage.setItem('email', this.email);
+    localStorage.setItem('assessmentModuleCode', this.assessmentModule);
     this.router.navigateByUrl('/edit-assessment');
   }
 
@@ -551,7 +594,6 @@ export class ViewAssessmentComponent implements OnInit {
           const promise = this.api.getMarkedSubmission(submission.submissionID).toPromise().then(
             (res: any) => {
               if (res && res.pdfData && res.pdfData.type === 'Buffer') {
-                console.log(res);
                 const byteArray = new Uint8Array(res.pdfData.data);
                 zip.file(`${submission.submissionFolderName}/${submission.studentNumber}.pdf`, byteArray);
               } else {

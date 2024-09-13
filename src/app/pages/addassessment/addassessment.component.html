@@ -16,7 +16,7 @@
           <label for="module">Module</label>
           <select id="module" formControlName="module" class="form-control">
             <option value="" disabled selected>Select a module</option>
-            <option *ngFor="let module of modules" [value]="module.ModuleCode">{{ module.ModuleCode }}</option>
+            <option *ngFor="let module of modules" [value]="module.ModuleCode">{{ module.ModuleCode }}: {{module.ModuleName}} </option>
           </select>
     
     <div class="form-group">
@@ -24,7 +24,7 @@
           <select id="moderator" formControlName="moderator" class="form-control">
             <option value="" disabled selected>Select a moderator</option>
             <option *ngFor="let moderator of moderators" [value]="moderator.ModEmail">
-              {{ moderator.ModEmail }} ({{ moderator.Name }} {{ moderator.Surname }})
+               {{ moderator.Name }} {{ moderator.Surname }} ({{ moderator.ModEmail }})
             </option>
           </select>
     </div>
@@ -55,7 +55,7 @@
             [checked]="isMarkerSelected(marker)"
           />
           <label class="form-check-label" [for]="'marker-' + marker.MarkerEmail">
-            {{ marker.MarkerEmail }} ({{ marker.Name }} {{ marker.Surname }})
+             {{ marker.Name }} {{ marker.Surname }} ({{ marker.MarkerEmail }})
           </label>
         </div>
       </div>
@@ -64,31 +64,36 @@
 
     <div class="form-group">
       <div class="file-upload-container">
-        <br>
         <label for="memoInput">Upload the assessment memorandum:</label>
-        <div class="dropzone" (drop)="onMemoDrop($event)" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (click)="memoInput.click()">
-          <p>Drag and drop a file here, or click to select a file</p>
-        </div>
-        <div *ngIf="selectedMemoFile">
-          <p>Selected file: {{ selectedMemoFile.name }}</p>
+        <div class="dropzone" 
+             [ngClass]="{'file-selected': selectedMemoFile, 'file-hover': isHoveringMemo}" 
+             (drop)="onMemoDrop($event)" 
+             (dragover)="onDragOver($event)" 
+             (dragleave)="onDragLeaveMemo($event)" 
+             (click)="memoInput.click()">
+          <p *ngIf="!selectedMemoFile">Drag and drop a file here, or click to select a file</p>
+          <p *ngIf="selectedMemoFile" class="success-message"><b>File uploaded successfully: {{ selectedMemoFile.name }}</b></p>
         </div>
         <input type="file" accept=".pdf" id="memoInput" style="display: none" (change)="onMemoFileSelected($event)" #memoInput>
       </div>
     </div>
-
+    
     <div class="form-group">
       <div class="file-upload-container">
-        <br>
         <label for="submissionsInput">Upload the submissions (in ZIP file format from {{assessmentType}}):</label>
-        <div class="dropzone" (drop)="onSubmissionsDrop($event)" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (click)="submissionsInput.click()">
-          <p>Drag and drop a file here, or click to select a file</p>
-        </div>
-        <div *ngIf="selectedSubmissionsFile">
-          <p>Selected file: {{ selectedSubmissionsFile.name }}</p>
+        <div class="dropzone" 
+             [ngClass]="{'file-selected': selectedSubmissionsFile, 'file-hover': isHoveringSubmissions}" 
+             (drop)="onSubmissionsDrop($event)" 
+             (dragover)="onDragOver($event)" 
+             (dragleave)="onDragLeaveSubmissions($event)" 
+             (click)="submissionsInput.click()">
+          <p *ngIf="!selectedSubmissionsFile">Drag and drop a file here, or click to select a file</p>
+          <p *ngIf="selectedSubmissionsFile" class="success-message"><b>File uploaded successfully: {{ selectedSubmissionsFile.name }}</b></p>
         </div>
         <input type="file" accept=".zip" id="submissionsInput" style="display: none" (change)="onSubmissionsFileSelected($event)" #submissionsInput>
       </div>
     </div>
+    
     
     <button type="submit" class="btn btn-primary" [disabled]="!assessmentForm.valid">Add Assessment</button>
   </form>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../../API/api.service';
 import JSZip, { file } from 'jszip';
@@ -6,7 +6,7 @@ import { Submission } from '../../classes/Submission';
 import { Module } from '../../classes/Module';
 import { Marker } from '../../classes/Marker';
 import { Moderator } from '../../classes/Moderator';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 
@@ -23,13 +23,13 @@ import Swal from 'sweetalert2';
  */
 export class EditAssessmentComponent implements OnInit {
   assessmentName: string = '';
+  assessmentModuleCode: string = '';
   assessmentID: number = 0;
   email = '';
   assessmentType = '';
   loading: boolean = false;
   assessmentForm: FormGroup;
   modules: Module[] = [];
-  AssessmentName: string = '';
   moderators: Moderator[] = [];
   markers: Marker[] = [];
   selectedMarkers: Marker[] = [];
@@ -37,29 +37,15 @@ export class EditAssessmentComponent implements OnInit {
   selectedMemoFile: File | null = null;
   selectedSubmissionsFile: File | null = null;
   submissions: Submission[] = [];
+  isHoveringMemo = false;
+  isHoveringSubmissions = false;
 
   /**
    * @param fb - The form builder service for creating form controls
    * @param api  - The API service for making HTTP requests to the server
    * @param router - The router service for navigating between pages
    */
-  constructor(private fb: FormBuilder, private api: ApiService, private router: Router) {
-    const storedAssessmentID = sessionStorage.getItem('assessmentID');
-    const storedAssessmentName = sessionStorage.getItem('assessmentName');
-    const storedEmail = sessionStorage.getItem('email');
-    const storedAssessmentType = sessionStorage.getItem('assessmentType');
-    if (storedAssessmentID !== null) {
-      this.assessmentID = parseInt(storedAssessmentID, 0);
-    }
-    if (storedAssessmentName !== null) {
-      this.assessmentName = storedAssessmentName;
-    }
-    if (storedEmail !== null) {
-      this.email = storedEmail;
-    }
-    if (storedAssessmentType !== null){
-      this.assessmentType = storedAssessmentType;
-    }
+  constructor(private fb: FormBuilder, private api: ApiService, private router: Router, @Inject(PLATFORM_ID) private platformId: Object, private location: Location) {
     this.assessmentForm = this.fb.group({
       assessmentName: ['', Validators.required],
       module: ['', Validators.required],
@@ -76,6 +62,28 @@ export class EditAssessmentComponent implements OnInit {
    * This function fetches the modules, moderators and markers from the server.
    */
   ngOnInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const storedAssessmentID = localStorage.getItem('assessmentID');
+      const storedAssessmentName = localStorage.getItem('assessmentName');
+      const storedEmail = localStorage.getItem('email');
+      const storedAssessmentType = localStorage.getItem('assessmentType');
+      const storedAssessmentModuleCode = localStorage.getItem('assessmentModuleCode');
+      if (storedAssessmentID !== null) {
+        this.assessmentID = parseInt(storedAssessmentID);
+      }
+      if (storedAssessmentName !== null) {
+        this.assessmentName = storedAssessmentName;
+      }
+      if (storedEmail !== null) {
+        this.email = storedEmail;
+      }
+      if (storedAssessmentType !== null) {
+        this.assessmentType = storedAssessmentType;
+      }
+      if (storedAssessmentModuleCode !== null) {
+        this.assessmentModuleCode = storedAssessmentModuleCode;
+      }
+    }
     this.fetchData();
   }
   
@@ -98,15 +106,13 @@ export class EditAssessmentComponent implements OnInit {
     this.api.getAssessmentInfo(this.assessmentID).subscribe((res: any) => {
       if (res) {
             const markerEmails = JSON.parse(res.MarkerEmail);
-            console.log(markerEmails);
-
             this.selectedMarkers = this.markers.filter(marker => markerEmails.includes(marker.MarkerEmail));
             this.assessmentForm.patchValue({
               assessmentName: res.AssessmentName,
               module: res.ModuleCode,
               moderator: res.ModEmail,
               totalMarks: res.TotalMark,
-              markers: this.selectedMarkers.map(marker => marker.MarkerEmail) // Preselect markers
+              markers: this.selectedMarkers.map(marker => marker.MarkerEmail)
             });
           }
         else{
@@ -182,9 +188,7 @@ export class EditAssessmentComponent implements OnInit {
   getMarkers(){
     this.api.getMarkers().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
-        this.markers = res
-                          .filter((marker: any) => marker.MarkerEmail !== this.email)
-                          .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+        this.markers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
       }else{
         alert('No markers found or invalid response format.');
       }
@@ -483,8 +487,22 @@ export class EditAssessmentComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     this.removeDragOverClass();
+    this.isHoveringMemo = false;
   }
 
+  onDragLeaveMemo(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.removeDragOverClass();
+    this.isHoveringMemo = false;
+  }
+
+  onDragLeaveSubmissions(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.removeDragOverClass();
+    this.isHoveringSubmissions = false;
+  }
   /**
    * Function to add the dragover class to the dropzone.
    * This function adds the dragover class to the dropzone element.
@@ -505,6 +523,17 @@ export class EditAssessmentComponent implements OnInit {
     dropzone?.classList.remove('dragover');
   }
   onMarkerChange(event: any, marker: Marker): void {
+    // Prevent removing lecturer marker from selectedMarkers
+    if (marker.MarkerEmail === this.email) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: 'You cannot deselect yourself as a marker!',
+      });
+      event.target.checked = true;
+      return;
+    }
+  
     if (event.target.checked) {
       if (!this.selectedMarkers.includes(marker)) {
         this.selectedMarkers.push(marker);
@@ -512,7 +541,6 @@ export class EditAssessmentComponent implements OnInit {
     } else {
       this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail);
     }
-    this.assessmentForm.controls['markers'].setValue(this.selectedMarkers.map(m => m.MarkerEmail));
   }
 
   isMarkerSelected(marker: Marker): boolean {
@@ -567,4 +595,8 @@ export class EditAssessmentComponent implements OnInit {
         });
       }
     }
-}
+
+    onReturnAssessment(){
+      this.location.back();
+    }
+  }
