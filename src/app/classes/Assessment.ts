@@ -1,5 +1,6 @@
 export class Assessment {
     assessmentID: number;
+    lecturerEmail: string;
     moduleCode: string;
     assessmentName: string;
     numMarked: number;
@@ -9,6 +10,7 @@ export class Assessment {
   
     public constructor(
       assessmentID: number,
+      lecturerEmail: string,
       moduleCode: string,
       assessmentName: string,
       numMarked: number,
@@ -17,6 +19,7 @@ export class Assessment {
       assessmentType: string
     ) {
       this.assessmentID = assessmentID;
+      this.lecturerEmail = lecturerEmail;
       this.moduleCode = moduleCode;
       this.assessmentName = assessmentName;
       this.numMarked = numMarked;

@@ -118,11 +118,12 @@ export class DashboardComponent implements OnInit {
      * @param modEmail - The email of the moderator
      * This method is used to navigate to the view-assessment page, where the relevant submissions are displayed for that assessment
      */
-    onViewAsssessment(assessmentID:number,assessmentName:string, moduleCode:string, modEmail:string, assesmentType: string): void{
+    onViewAsssessment(assessmentID:number,assessmentName:string, assessmentLecturerEmail: string, moduleCode:string, modEmail:string, assesmentType: string): void{
       localStorage.setItem('assessmentID',assessmentID.toString());
       localStorage.setItem('assessmentName',assessmentName);
       localStorage.setItem('assessmentModule',moduleCode);
       localStorage.setItem('modEmail', modEmail);
+      localStorage.setItem('lecturerEmail', assessmentLecturerEmail);
       localStorage.setItem('assessmentType', assesmentType);
       this.router.navigateByUrl('/view-assessment)')
     }
@@ -196,9 +197,9 @@ export class DashboardComponent implements OnInit {
       const lecturing = assessment.modEmail !== this.email;
       const moderating = assessment.modEmail === this.email;
   
-      if (this.selectedStatus === 'Lecturing') {
+      if (this.selectedStatus === 'Lecturer') {
         return lecturing;
-      } else if (this.selectedStatus === 'Moderating') {
+      } else if (this.selectedStatus === 'Moderator') {
         return moderating;
       } else {
         return true;

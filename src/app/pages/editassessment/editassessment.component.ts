@@ -1,5 +1,5 @@
 import { Component, OnInit, PLATFORM_ID, Inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ApiService } from '../../API/api.service';
 import JSZip, { file } from 'jszip';
 import { Submission } from '../../classes/Submission';
@@ -9,11 +9,12 @@ import { Moderator } from '../../classes/Moderator';
 import { CommonModule, isPlatformBrowser, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import { waitForAsync } from '@angular/core/testing';
 
 @Component({
   selector: 'app-editassessment',
   standalone: true,
-  imports: [ReactiveFormsModule,CommonModule],
+  imports: [ReactiveFormsModule,CommonModule, FormsModule],
   templateUrl: './editassessment.component.html',
   styleUrl: './editassessment.component.css'
 })
@@ -23,7 +24,9 @@ import Swal from 'sweetalert2';
  */
 export class EditAssessmentComponent implements OnInit {
   assessmentName: string = '';
+  assessmentLecturerEmail: string = '';
   assessmentModuleCode: string = '';
+  assessmentModEmail: string = '';
   assessmentID: number = 0;
   email = '';
   assessmentType = '';
@@ -32,6 +35,7 @@ export class EditAssessmentComponent implements OnInit {
   modules: Module[] = [];
   moderators: Moderator[] = [];
   markers: Marker[] = [];
+  allMarkers: Marker[] = [];
   selectedMarkers: Marker[] = [];
   TotalMark: number = 0;
   selectedMemoFile: File | null = null;
@@ -39,6 +43,8 @@ export class EditAssessmentComponent implements OnInit {
   submissions: Submission[] = [];
   isHoveringMemo = false;
   isHoveringSubmissions = false;
+  isMemoUpdateEnabled = false;
+  isSubmissionsUpdateEnabled = false; 
 
   /**
    * @param fb - The form builder service for creating form controls
@@ -52,8 +58,8 @@ export class EditAssessmentComponent implements OnInit {
       moderator: ['', Validators.required],
       markers: [[], Validators.required],
       totalMarks: [null, [Validators.required, Validators.pattern(/^[1-9]\d*$/)]],
-      selectedMFile: [null, Validators.required],
-      selectedSFile: [null, Validators.required]
+      selectedMFile: [null],
+      selectedSFile: [null]
     });
   }
 
@@ -64,10 +70,12 @@ export class EditAssessmentComponent implements OnInit {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       const storedAssessmentID = localStorage.getItem('assessmentID');
+      const storedAssessmentLecturerEmail = localStorage.getItem('lecturerEmail');
       const storedAssessmentName = localStorage.getItem('assessmentName');
       const storedEmail = localStorage.getItem('email');
       const storedAssessmentType = localStorage.getItem('assessmentType');
       const storedAssessmentModuleCode = localStorage.getItem('assessmentModuleCode');
+      const storedAssessmentModEmail = localStorage.getItem('modEmail');
       if (storedAssessmentID !== null) {
         this.assessmentID = parseInt(storedAssessmentID);
       }
@@ -83,6 +91,12 @@ export class EditAssessmentComponent implements OnInit {
       if (storedAssessmentModuleCode !== null) {
         this.assessmentModuleCode = storedAssessmentModuleCode;
       }
+      if (storedAssessmentModEmail !== null) {
+        this.assessmentModEmail = storedAssessmentModEmail;
+      }
+      if (storedAssessmentLecturerEmail !== null) {
+        this.assessmentLecturerEmail = storedAssessmentLecturerEmail;
+      }
     }
     this.fetchData();
   }
@@ -97,33 +111,73 @@ export class EditAssessmentComponent implements OnInit {
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Failed to load data. Please try again.',
+          text: 'Failed to load data. Please check your internet connection.',
         });
       });
   }
+
+  onUpdateMemorandumToggle(): void {
+    const memoFileControl = this.assessmentForm.get('selectedMFile');
+    
+    if (this.isMemoUpdateEnabled) {
+      memoFileControl?.setValidators([Validators.required]);
+    } else {
+      memoFileControl?.clearValidators();
+    }
+    memoFileControl?.updateValueAndValidity();
+  }
   
-  getAssessmentInfo(): void {
+  onUpdateSubmissionToggle(): void {
+    const submissionFileControl = this.assessmentForm.get('selectedSFile');
+  
+    if (this.isSubmissionsUpdateEnabled) {
+      submissionFileControl?.setValidators([Validators.required]);
+    } else {
+      submissionFileControl?.clearValidators();
+    }
+  
+    submissionFileControl?.updateValueAndValidity();
+  }
+  
+  async getAssessmentInfo(): Promise<void> {
+    if (this.markers.length === 0) {
+      await this.loadMarkers(); // Ensure markers are loaded before proceeding
+    }
+  
     this.api.getAssessmentInfo(this.assessmentID).subscribe((res: any) => {
       if (res) {
-            const markerEmails = JSON.parse(res.MarkerEmail);
-            this.selectedMarkers = this.markers.filter(marker => markerEmails.includes(marker.MarkerEmail));
-            this.assessmentForm.patchValue({
-              assessmentName: res.AssessmentName,
-              module: res.ModuleCode,
-              moderator: res.ModEmail,
-              totalMarks: res.TotalMark,
-              markers: this.selectedMarkers.map(marker => marker.MarkerEmail)
-            });
-          }
-        else{
-          Swal.fire({
-            icon: "error",
-            title: "No connection",
-            text: "Cannot connect to server",
+        const markerEmails = JSON.parse(res.MarkerEmail);
+        this.selectedMarkers = this.markers.filter(marker => markerEmails.includes(marker.MarkerEmail));
+        this.assessmentForm.patchValue({
+          assessmentName: res.AssessmentName,
+          module: res.ModuleCode,
+          moderator: res.ModEmail,
+          totalMarks: res.TotalMark,
+          markers: this.selectedMarkers.map(marker => marker.MarkerEmail)
         });
-    }
-  });
-}
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "No connection",
+          text: "Cannot connect to server",
+        });
+      }
+    });
+  }
+  
+  async loadMarkers(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.getMarkers().subscribe((res: any) => {
+        if (res && Array.isArray(res)) {
+          this.markers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+          resolve(); // Mark as resolved once markers are loaded
+        } else {
+          reject('Failed to load markers');
+        }
+      });
+    });
+  }
+  
     /**
    * Function to retrieve all submissions for an assessment
    * @param assessmentID - The ID of the assessment
@@ -167,9 +221,15 @@ export class EditAssessmentComponent implements OnInit {
   getModerators(): Promise<void> {
     return this.api.getModerators().toPromise().then((res: any) => {
       if (res && Array.isArray(res)) {
-        this.moderators = res
+        if (this.email === this.assessmentModEmail){
+          this.moderators = res
+                            .filter((moderator: any) => moderator.ModEmail !== this.assessmentLecturerEmail)
+                            .map((moderator: any) => new Moderator(moderator.ModEmail, moderator.Name, moderator.Surname));
+        }else{
+          this.moderators = res
           .filter((moderator: any) => moderator.ModEmail !== this.email)
           .map((moderator: any) => new Moderator(moderator.ModEmail, moderator.Name, moderator.Surname));
+        }
       } else {
         throw new Error('No moderators found or invalid response format.');
       }
@@ -188,7 +248,10 @@ export class EditAssessmentComponent implements OnInit {
   getMarkers(){
     this.api.getMarkers().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
-        this.markers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+        this.allMarkers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+        this.markers = res
+                            .filter((marker: any) => marker.MarkerEmail !== this.assessmentModEmail)
+                            .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
       }else{
         alert('No markers found or invalid response format.');
       }
@@ -212,41 +275,58 @@ export class EditAssessmentComponent implements OnInit {
   onSubmit(): void {
     if (this.assessmentForm.valid) {
       this.loading = true;
-      const reader = new FileReader();
-      const file: File = this.assessmentForm.value.selectedMFile;
-      if (file) {
+  
+      // Only handle memorandum if isMemoUpdateEnabled is true
+      if (this.isMemoUpdateEnabled && this.selectedMemoFile) {
+        const reader = new FileReader();
         reader.onloadend = async () => {
           const fileData = reader.result as ArrayBuffer;
           const byteArray = new Uint8Array(fileData);
-          const assessmentInfo = {
-            AssessmentID: this.assessmentID,
-            MarkerEmail: this.assessmentForm.value.markers,
-            AssessmentName: this.assessmentForm.value.assessmentName,
-            ModuleCode: this.assessmentForm.value.module,
-            Memorandum: byteArray,
-            ModEmail: this.assessmentForm.value.moderator,
-            TotalMark: this.assessmentForm.value.totalMarks,
-            NumSubmissionsMarked: 0,
-            TotalNumSubmissions: 0
-          };
-          try {
-            this.api.editAssessment(assessmentInfo).subscribe((res: any) => {
-              if (res && res.message === 'Assessment edited successfully') {
-                this.updateSubmissions(this.assessmentID);
-                this.loading = false;
-              }
-              this.router.navigateByUrl('/dashboard');
-            });
-          } catch (error) {
-            this.loading = false;
-            Swal.fire('Error', 'Failed to load data', 'error');
-          }
+          this.sendAssessmentUpdate(byteArray); // Helper function to send updates
         };
-
-        reader.readAsArrayBuffer(file);
+        reader.readAsArrayBuffer(this.selectedMemoFile);
+      } else {
+        // Proceed with submission if no memorandum update is needed
+        this.sendAssessmentUpdate(null);
       }
     }
   }
+  
+  sendAssessmentUpdate(memoByteArray: Uint8Array | null): void {
+    const assessmentInfo = {
+      AssessmentID: this.assessmentID,
+      MarkerEmail: this.assessmentForm.value.markers,
+      AssessmentName: this.assessmentForm.value.assessmentName,
+      ModuleCode: this.assessmentForm.value.module,
+      Memorandum: memoByteArray,
+      ModEmail: this.assessmentForm.value.moderator,
+      TotalMark: this.assessmentForm.value.totalMarks,
+    };
+  
+    this.api.editAssessment(assessmentInfo).subscribe(
+      (res: any) => {
+        if (res.message === 'Assessment edited successfully') {
+          if (this.isSubmissionsUpdateEnabled) {
+            this.updateSubmissions(this.assessmentID);
+          }else{
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Assessment edited successfully!',
+            });
+            this.loading = false;
+          }
+          this.router.navigateByUrl('/dashboard');
+        }
+        this.loading = false;
+      },
+      (error) => {
+        this.loading = false;
+        Swal.fire('Error', 'Failed to edit assessment', 'error');
+      }
+    );
+  }
+  
 
   updateSubmissions(assessmentID: number): void {
     if (this.selectedSubmissionsFile) {
@@ -261,8 +341,14 @@ export class EditAssessmentComponent implements OnInit {
               if (pathParts.length > 1) {
                 const folderName = pathParts[0];
                 const fileName = pathParts[pathParts.length - 1];
-                const [firstName, lastName, studentNumber] = this.extractInfoFromFolderName(folderName, fileName);
-  
+                var [firstName, lastName, studentNumber] = ['', '', ''];
+                if (this.assessmentType === 'Moodle') {
+                  [firstName, lastName, studentNumber] = this.extractInfoFromMoodleFolderName(folderName);
+                }
+                else{
+                  [firstName, lastName, studentNumber] = this.extractInfoFromTDriveFolderName(folderName, fileName);
+                }
+                console.log(`Folder: ${folderName}, FirstName: ${firstName}, LastName: ${lastName}, StudentNumber: ${studentNumber}`);
                 if (fileName.endsWith('.pdf')) {
                   promises.push(
                     zipEntry.async('arraybuffer').then((pdfData) => {
@@ -335,6 +421,13 @@ export class EditAssessmentComponent implements OnInit {
       });
     }
   }
+  onUpdateMarkerList(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    const selectedModEmail = selectElement.value;
+    this.markers = this.allMarkers;
+    this.markers = this.markers.filter((marker: Marker) => marker.MarkerEmail !== selectedModEmail);
+  }
+  
   processSubmissionPDF(pdfData: Uint8Array, assessmentID: number, firstName: string, lastName: string, studentNumber: string, folderName:string): void {
     const submissionInfo = {
       AssessmentID: assessmentID,
@@ -360,30 +453,26 @@ export class EditAssessmentComponent implements OnInit {
       });
     }
   }
-    /**
-   * 
-   * @param folderName - The name of the folder containing the submission. This folder name is parsed to extract student number, name and surname.
-   * @returns - A tuple containing the student number, first name and last name of the student.
-   */
-    extractInfoFromFolderName(folderName: string, fileName: string): [string, string, string] {
-      if (this.assessmentType == 'TDrive'){
-        const [name, surname] = folderName.split('-').slice(0, 2);   
-        let studentNumber = fileName.split('-')[1];
-        studentNumber = studentNumber.replace('.pdf', '');
-        return [name, surname, studentNumber];
-      }else{
-        let [studentNumber, name] = folderName.split('-');
-        studentNumber = studentNumber.slice(1);
-        const nameParts = name.split('_')[0].split(' ');
-        console.log(nameParts.length)
-        if (nameParts.length <= 2) {
-          return [nameParts[0], nameParts[1], studentNumber];
-        }
-        const lastName = nameParts.slice(-2).join(' ');
-        const firstName = nameParts.slice(0, -2).join(' ');
-        return [firstName, lastName, studentNumber];
-      }
+  extractInfoFromMoodleFolderName(folderName: string): [string, string, string] {
+    let [studentNumber, name] = folderName.split('-');
+    studentNumber = studentNumber.slice(1);
+    const nameParts = name.split('_')[0].split(' ');
+    console.log(nameParts.length)
+    if (nameParts.length <= 2) {
+      return [nameParts[0], nameParts[1], studentNumber];
+    }
+    const lastName = nameParts.slice(-2).join(' ');
+    const firstName = nameParts.slice(0, -2).join(' ');
+    return [firstName, lastName, studentNumber];
   }
+
+  extractInfoFromTDriveFolderName(folderName: string, fileName: string): [string, string, string] {
+    console.log(fileName);
+    const [name, surname] = folderName.split('-').slice(0, 2);   
+    let studentNumber = fileName.split('-')[1];
+    studentNumber = studentNumber.replace('.pdf', '');
+    return [name, surname, studentNumber];
+}
 
   /**
    * Function to check if a file is a PDF file.
@@ -523,12 +612,11 @@ export class EditAssessmentComponent implements OnInit {
     dropzone?.classList.remove('dragover');
   }
   onMarkerChange(event: any, marker: Marker): void {
-    // Prevent removing lecturer marker from selectedMarkers
-    if (marker.MarkerEmail === this.email) {
+    if (marker.MarkerEmail === this.assessmentLecturerEmail) {
       Swal.fire({
-        icon: "error",
+        icon: "warning",
         title: "Error",
-        text: 'You cannot deselect yourself as a marker!',
+        text: 'You cannot deselect the assessment lecturer as a marker',
       });
       event.target.checked = true;
       return;
@@ -541,7 +629,13 @@ export class EditAssessmentComponent implements OnInit {
     } else {
       this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail);
     }
+
+
+  this.assessmentForm.patchValue({
+    markers: this.selectedMarkers.map(m => m.MarkerEmail)
+  });
   }
+
 
   isMarkerSelected(marker: Marker): boolean {
     return this.selectedMarkers.some(m => m.MarkerEmail === marker.MarkerEmail);

@@ -25,6 +25,7 @@ export class ViewAssessmentComponent implements OnInit {
   assessmentID: number = 0;
   assessmentName: string = '';
   assessmentModule: string = '';
+  assessmentLecturerEmail: string = '';
   modEmail: string = '';
   email: string = '';
   searchTerm: string = '';
@@ -55,6 +56,7 @@ export class ViewAssessmentComponent implements OnInit {
       const storedAssessmentName = localStorage.getItem('assessmentName');
       const storedAssessmentModule = localStorage.getItem('assessmentModule');
       const storedAssessmentModEmail = localStorage.getItem('modEmail');
+      const storedAssessmentLecturerEmail = localStorage.getItem('lecturerEmail');
       const storedEmail = localStorage.getItem('email');
       if (storedAssessmentID !== null) {
         this.assessmentID = parseInt(storedAssessmentID);
@@ -71,6 +73,10 @@ export class ViewAssessmentComponent implements OnInit {
       }
       if (storedEmail !== null) {
         this.email = storedEmail;
+      }
+      if (storedAssessmentLecturerEmail !== null) {
+        this.assessmentLecturerEmail = storedAssessmentLecturerEmail;
+        console.log(this.assessmentLecturerEmail);
       }
     }
   }
@@ -378,6 +384,7 @@ export class ViewAssessmentComponent implements OnInit {
 
   onEditAssessment(){
     localStorage.setItem('email', this.email);
+    localStorage.setItem('lecturerEmail', this.assessmentLecturerEmail);
     localStorage.setItem('assessmentModuleCode', this.assessmentModule);
     this.router.navigateByUrl('/edit-assessment');
   }

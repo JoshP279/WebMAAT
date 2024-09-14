@@ -111,7 +111,6 @@
     background-color: #f9f9f9;
   }
 
-/* Default state: text is truncated with ellipsis */
 .assessment-item p {
   white-space: nowrap;
   overflow: hidden;
@@ -155,7 +154,7 @@
     margin-right: 10px;
   }
 
-  .moderator-disclaimer {
+  .role-disclaimer {
     background-color: #000080; 
     color: white;
     padding: 5px;

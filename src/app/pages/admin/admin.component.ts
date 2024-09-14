@@ -114,6 +114,7 @@ export class AdminComponent implements OnInit {
       html:
       `<input id="module-name" class="swal2-input" placeholder="Module Name" value="${module.ModuleName}" style="width: 350px;">`,
       focusConfirm: false,
+      confirmButtonText: 'Save Changes',
       showCancelButton:true,
       cancelButtonColor: '#d33',
       preConfirm: () => {
@@ -231,6 +232,7 @@ export class AdminComponent implements OnInit {
               <option value="Left Handed Ticks" ${lecturer.MarkingStyle === 'Left Handed Ticks' ? 'selected' : ''}>Left Handed Ticks</option>
           </select>`,
       focusConfirm: false,
+      confirmButtonText: 'Save Changes',
       showCancelButton: true,
       cancelButtonColor: '#d33',
       preConfirm: () => {
@@ -360,6 +362,7 @@ export class AdminComponent implements OnInit {
             <option value="Left Handed Ticks" ${marker.MarkingStyle === 'Left Handed Ticks' ? 'selected' : ''}>Left Handed Ticks</option>
         </select>`,
       focusConfirm: false,
+      confirmButtonText: 'Save Changes',
       showCancelButton: true,
       cancelButtonColor: '#d33',
       preConfirm: () => {

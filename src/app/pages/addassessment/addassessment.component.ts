@@ -29,6 +29,7 @@ export class AddAssessmentComponent implements OnInit {
   AssessmentName: string = '';
   moderators: Moderator[] = [];
   markers: Marker[] = [];
+  allMarkers: Marker[] = [];
   selectedMarkers: Marker[] = [];
   TotalMark: number = 0;
   selectedMemoFile: File | null = null;
@@ -114,6 +115,13 @@ export class AddAssessmentComponent implements OnInit {
     });
   }
 
+  onUpdateMarkerList(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    const selectedModEmail = selectElement.value;
+    this.markers = this.allMarkers;
+    this.markers = this.markers.filter((marker: Marker) => marker.MarkerEmail !== selectedModEmail);
+  }
+
   /**
    * Function to fetch the markers from the server.
    * This function sends a GET request to the server to fetch the markers.
@@ -125,6 +133,7 @@ export class AddAssessmentComponent implements OnInit {
   getMarkers(){
     this.api.getMarkers().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
+        this.allMarkers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
         this.markers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
         const lecturerMarker = this.markers.find(marker => marker.MarkerEmail === this.email);
   
@@ -537,9 +546,9 @@ export class AddAssessmentComponent implements OnInit {
     // Prevent removing lecturer marker from selectedMarkers
     if (marker.MarkerEmail === this.email) {
       Swal.fire({
-        icon: "error",
+        icon: "warning",
         title: "Error",
-        text: 'You cannot deselect yourself as a marker!',
+        text: 'You cannot deselect the assessment lecturer as a marker',
       });
       event.target.checked = true;
       return;

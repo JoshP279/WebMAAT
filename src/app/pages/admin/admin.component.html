@@ -23,15 +23,15 @@
   </div>
 
   <h3>Existing Modules</h3>
-  <ul>
-    <li *ngFor="let module of modules">
-      <span>{{ module.ModuleCode }} - {{ module.ModuleName }}</span>
-      <div class="action-buttons">
-        <button class="btn btn-sm btn-edit" (click)="onEditModule(module)">Edit</button>
-        <button class="btn btn-sm btn-delete" (click)="onDeleteModule(module.ModuleCode)">Delete</button>
-      </div>
-    </li>
-  </ul>
+    <ul>
+      <li *ngFor="let module of modules">
+        <span>{{ module.ModuleCode }} - {{ module.ModuleName }}</span>
+        <div class="action-buttons">
+          <button class="btn btn-sm btn-edit" (click)="onEditModule(module)">Edit</button>
+          <button class="btn btn-sm btn-delete" (click)="onDeleteModule(module.ModuleCode)">Delete</button>
+        </div>
+      </li>
+    </ul>
 
   <div class="form-group">
     <label for="lecturer"><h3>Add Lecturer</h3></label>

@@ -17,8 +17,8 @@
     <label for="statusFilter">Filter by Role:</label>
     <select id="statusFilter" [(ngModel)]="selectedStatus" (change)="filterAssessments()">
       <option value="">All</option>
-      <option value="Lecturing">Lecturing</option>
-      <option value="Moderating">Moderating</option>
+      <option value="Lecturer">Lecturer</option>
+      <option value="Moderator">Moderator</option>
     </select>
   
     <label for="markSort">Sort by Progress:</label>
@@ -30,7 +30,7 @@
 </div>
 
 <div class="assessments-list">
-  <div *ngFor="let assessment of filteredAssessments" class="assessment-item" (click) = "onViewAsssessment(assessment.assessmentID,assessment.assessmentName, assessment.moduleCode, assessment.modEmail, assessment.assessmentType)">
+  <div *ngFor="let assessment of filteredAssessments" class="assessment-item" (click) = "onViewAsssessment(assessment.assessmentID,assessment.assessmentName, assessment.lecturerEmail, assessment.moduleCode, assessment.modEmail, assessment.assessmentType)">
     <h3>{{ assessment.moduleCode }}</h3>
 
     <p>{{ assessment.assessmentName }}</p>
@@ -45,7 +45,8 @@
       <span class="progress-text">{{ getProgressPercentage(assessment.numMarked, assessment.totalSubmissions) }}%</span>
     </div>
     <p>{{ assessment.numMarked }} / {{ assessment.totalSubmissions }}</p>
-    <div *ngIf="assessment.modEmail === email" class="moderator-disclaimer">
-      <p>Moderating</p>
+    <div class="role-disclaimer">
+      <h3 *ngIf="assessment.modEmail === email">Moderator</h3>
+      <h3 *ngIf="assessment.modEmail !== email">Lecturer</h3>
     </div>
 </div>
