@@ -69,13 +69,13 @@ export class EditAssessmentComponent implements OnInit {
    */
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      const storedAssessmentID = localStorage.getItem('assessmentID');
-      const storedAssessmentLecturerEmail = localStorage.getItem('lecturerEmail');
-      const storedAssessmentName = localStorage.getItem('assessmentName');
-      const storedEmail = localStorage.getItem('email');
-      const storedAssessmentType = localStorage.getItem('assessmentType');
-      const storedAssessmentModuleCode = localStorage.getItem('assessmentModuleCode');
-      const storedAssessmentModEmail = localStorage.getItem('modEmail');
+      const storedAssessmentID = sessionStorage.getItem('assessmentID');
+      const storedAssessmentLecturerEmail = sessionStorage.getItem('lecturerEmail');
+      const storedAssessmentName = sessionStorage.getItem('assessmentName');
+      const storedEmail = sessionStorage.getItem('email');
+      const storedAssessmentType = sessionStorage.getItem('assessmentType');
+      const storedAssessmentModuleCode = sessionStorage.getItem('assessmentModuleCode');
+      const storedAssessmentModEmail = sessionStorage.getItem('modEmail');
       if (storedAssessmentID !== null) {
         this.assessmentID = parseInt(storedAssessmentID);
       }

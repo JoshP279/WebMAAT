@@ -40,7 +40,7 @@ export class DashboardComponent implements OnInit {
    */
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      const storedEmail = localStorage.getItem('email');
+      const storedEmail = sessionStorage.getItem('email');
       if (storedEmail != null){
         this.email = storedEmail;
         this.onGetAssessments(this.email);
@@ -89,7 +89,7 @@ export class DashboardComponent implements OnInit {
      * It stores the email in session storage
      */
     onAddAssessment(): void {
-      localStorage.setItem('email', this.email);
+      sessionStorage.setItem('email', this.email);
       Swal.fire({
         icon: "question",
         title: "What type of assessment would you like to add?",
@@ -99,10 +99,10 @@ export class DashboardComponent implements OnInit {
         denyButtonText: `Test Drive Assessment`,
       }).then((result) => {
         if (result.isConfirmed) {
-          localStorage.setItem('assessmentType', 'Moodle');
+          sessionStorage.setItem('assessmentType', 'Moodle');
           this.router.navigateByUrl('/add-assessment');
         } else if (result.isDenied) {
-          localStorage.setItem('assessmentType', 'Test Drive');
+          sessionStorage.setItem('assessmentType', 'Test Drive');
           this.router.navigateByUrl('/add-assessment');
         } else if (result.dismiss === Swal.DismissReason.cancel) {
           // do nothing if the user cancels the operation
@@ -119,12 +119,12 @@ export class DashboardComponent implements OnInit {
      * This method is used to navigate to the view-assessment page, where the relevant submissions are displayed for that assessment
      */
     onViewAsssessment(assessmentID:number,assessmentName:string, assessmentLecturerEmail: string, moduleCode:string, modEmail:string, assesmentType: string): void{
-      localStorage.setItem('assessmentID',assessmentID.toString());
-      localStorage.setItem('assessmentName',assessmentName);
-      localStorage.setItem('assessmentModule',moduleCode);
-      localStorage.setItem('modEmail', modEmail);
-      localStorage.setItem('lecturerEmail', assessmentLecturerEmail);
-      localStorage.setItem('assessmentType', assesmentType);
+      sessionStorage.setItem('assessmentID',assessmentID.toString());
+      sessionStorage.setItem('assessmentName',assessmentName);
+      sessionStorage.setItem('assessmentModule',moduleCode);
+      sessionStorage.setItem('modEmail', modEmail);
+      sessionStorage.setItem('lecturerEmail', assessmentLecturerEmail);
+      sessionStorage.setItem('assessmentType', assesmentType);
       this.router.navigateByUrl('/view-assessment)')
     }
 
@@ -178,7 +178,7 @@ export class DashboardComponent implements OnInit {
    * It clears the session storage and navigates to the login page
    */
   onLogout(): void {
-    localStorage.clear();
+    sessionStorage.clear();
     this.router.navigateByUrl('/login');
   }
 

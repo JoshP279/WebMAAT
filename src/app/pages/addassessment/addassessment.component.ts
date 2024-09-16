@@ -58,8 +58,8 @@ export class AddAssessmentComponent implements OnInit {
    * This function fetches the modules, moderators and markers from the server.
    */
   ngOnInit(): void {
-    const storedEmail = localStorage.getItem('email');
-    const assessmentType = localStorage.getItem('assessmentType');
+    const storedEmail = sessionStorage.getItem('email');
+    const assessmentType = sessionStorage.getItem('assessmentType');
     if (storedEmail != null && assessmentType != null){
       this.email = storedEmail;
       this.assessmentType = assessmentType;
@@ -530,7 +530,7 @@ export class AddAssessmentComponent implements OnInit {
    * The user's email is removed from the session storage, and the user is redirected to the login page.
    */
   onLogout(): void {
-    localStorage.removeItem('email');
+    sessionStorage.removeItem('email');
     this.router.navigateByUrl('/login');
   }
 

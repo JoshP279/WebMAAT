@@ -54,7 +54,7 @@ export class LoginComponent {
         if (res && res.MarkerRole) {
             if (res.MarkerRole === 'Lecturer') {
                 const email = this.loginObj.MarkerEmail;
-                localStorage.setItem('email', email);
+                sessionStorage.setItem('email', email);
                 this.router.navigateByUrl('/dashboard');
             } else if (res.MarkerRole === 'Admin') {
                 this.router.navigateByUrl('/admin');

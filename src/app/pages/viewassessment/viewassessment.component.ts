@@ -52,12 +52,12 @@ export class ViewAssessmentComponent implements OnInit {
    */
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      const storedAssessmentID = localStorage.getItem('assessmentID');
-      const storedAssessmentName = localStorage.getItem('assessmentName');
-      const storedAssessmentModule = localStorage.getItem('assessmentModule');
-      const storedAssessmentModEmail = localStorage.getItem('modEmail');
-      const storedAssessmentLecturerEmail = localStorage.getItem('lecturerEmail');
-      const storedEmail = localStorage.getItem('email');
+      const storedAssessmentID = sessionStorage.getItem('assessmentID');
+      const storedAssessmentName = sessionStorage.getItem('assessmentName');
+      const storedAssessmentModule = sessionStorage.getItem('assessmentModule');
+      const storedAssessmentModEmail = sessionStorage.getItem('modEmail');
+      const storedAssessmentLecturerEmail = sessionStorage.getItem('lecturerEmail');
+      const storedEmail = sessionStorage.getItem('email');
       if (storedAssessmentID !== null) {
         this.assessmentID = parseInt(storedAssessmentID);
         this.getSubmissions(this.assessmentID);
@@ -162,7 +162,7 @@ export class ViewAssessmentComponent implements OnInit {
   }
 
   onLogout(): void{
-    localStorage.clear();
+    sessionStorage.clear();
     this.router.navigateByUrl('/login');
   }
   
@@ -383,9 +383,9 @@ export class ViewAssessmentComponent implements OnInit {
   
 
   onEditAssessment(){
-    localStorage.setItem('email', this.email);
-    localStorage.setItem('lecturerEmail', this.assessmentLecturerEmail);
-    localStorage.setItem('assessmentModuleCode', this.assessmentModule);
+    sessionStorage.setItem('email', this.email);
+    sessionStorage.setItem('lecturerEmail', this.assessmentLecturerEmail);
+    sessionStorage.setItem('assessmentModuleCode', this.assessmentModule);
     this.router.navigateByUrl('/edit-assessment');
   }
 
