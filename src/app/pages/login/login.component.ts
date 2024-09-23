@@ -34,6 +34,7 @@ export class LoginComponent {
    * This function sends a GET request to the server with the login credentials.
    */
   onLogin() {
+    sessionStorage.clear();
     this.api.login(this.loginObj).pipe(
         catchError((error) => {
             // Check if there is no response or status is 0 (network issues)
@@ -51,12 +52,15 @@ export class LoginComponent {
             }
         })
     ).subscribe((res: any) => {
+        console.log(res.body);
         if (res && res.MarkerRole) {
             if (res.MarkerRole === 'Lecturer') {
                 const email = this.loginObj.MarkerEmail;
                 sessionStorage.setItem('email', email);
                 this.router.navigateByUrl('/dashboard');
             } else if (res.MarkerRole === 'Admin') {
+                const email = this.loginObj.MarkerEmail;
+                sessionStorage.setItem('AdminEmail', email);
                 this.router.navigateByUrl('/admin');
             } else {
                 Swal.fire({

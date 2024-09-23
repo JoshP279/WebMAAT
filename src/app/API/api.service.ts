@@ -12,12 +12,12 @@ import { Observable } from 'rxjs';
  * The methods in this class are used to make requests to the server
  */
 export class ApiService {
-  private baseUrl = 'http://10.0.0.107:3306';
+  private baseUrl = 'http://10.0.0.107:3306'; // Update this with your current Ngrok URL
   constructor(private http: HttpClient) { }
 
   login(loginObj: any): Observable<any> {
-    return this.http.get(`${this.baseUrl}/login?MarkerEmail=${loginObj.MarkerEmail}&Password=${loginObj.Password}`, loginObj);
-  }
+    return this.http.get(`${this.baseUrl}/login?MarkerEmail=${loginObj.MarkerEmail}&Password=${loginObj.Password}`);
+}
   getAssessments(email: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/assessments?MarkerEmail=${email}`);
   }

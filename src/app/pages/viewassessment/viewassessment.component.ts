@@ -56,27 +56,35 @@ export class ViewAssessmentComponent implements OnInit {
       const storedAssessmentName = sessionStorage.getItem('assessmentName');
       const storedAssessmentModule = sessionStorage.getItem('assessmentModule');
       const storedAssessmentModEmail = sessionStorage.getItem('modEmail');
-      const storedAssessmentLecturerEmail = sessionStorage.getItem('lecturerEmail');
       const storedEmail = sessionStorage.getItem('email');
-      if (storedAssessmentID !== null) {
+      if (storedAssessmentID) {
         this.assessmentID = parseInt(storedAssessmentID);
         this.getSubmissions(this.assessmentID);
       }
-      if (storedAssessmentName !== null) {
+      if (storedAssessmentName) {
         this.assessmentName = storedAssessmentName;
       }
-      if (storedAssessmentModule !== null) {
+      if (storedAssessmentModule) {
         this.assessmentModule = storedAssessmentModule;
       }
-      if (storedAssessmentModEmail !== null) {
+      if (storedAssessmentModEmail) {
         this.modEmail = storedAssessmentModEmail;
       }
-      if (storedEmail !== null) {
+      if (storedEmail) {
         this.email = storedEmail;
       }
-      if (storedAssessmentLecturerEmail !== null) {
-        this.assessmentLecturerEmail = storedAssessmentLecturerEmail;
-        console.log(this.assessmentLecturerEmail);
+      else {
+        sessionStorage.clear();
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: 'Please log in to access this page',
+          showConfirmButton: true,
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.router.navigate(['/login']);
+          }
+        });
       }
     }
   }
@@ -473,7 +481,6 @@ export class ViewAssessmentComponent implements OnInit {
   }
 
   onModeratorPublishResults(): void {
-    // Prepare the Swal dialog for confirmation
     Swal.fire({
       title: "Are you sure?",
       html: `
@@ -481,23 +488,22 @@ export class ViewAssessmentComponent implements OnInit {
           <p>This will email the moderator (${this.modEmail}) the results of the assessment.</p>
         </div>
       `,
-      icon: "warning",
+      icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#000080",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, publish results",
       cancelButtonText: "Cancel",
       preConfirm: () => {
-        // Check if the moderator email is available
         if (!this.modEmail) {
           Swal.showValidationMessage('Moderator email is missing.');
-          return undefined; // Return undefined to prevent proceeding
+          return undefined;
         }
         return true;
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        this.sendModeratorEmail(); // Call function to send email to moderator
+        this.sendModeratorEmail();
       }
     });
   }

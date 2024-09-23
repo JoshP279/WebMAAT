@@ -60,10 +60,23 @@ export class AddAssessmentComponent implements OnInit {
   ngOnInit(): void {
     const storedEmail = sessionStorage.getItem('email');
     const assessmentType = sessionStorage.getItem('assessmentType');
-    if (storedEmail != null && assessmentType != null){
+  
+    if (storedEmail && assessmentType) {
       this.email = storedEmail;
       this.assessmentType = assessmentType;
       this.fetchData();
+    } else {
+      sessionStorage.clear();
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: 'Please log in to access this page',
+        showConfirmButton: true,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.router.navigate(['/login']);
+        }
+      });
     }
   }
   

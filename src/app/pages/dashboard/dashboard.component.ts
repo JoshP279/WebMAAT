@@ -41,9 +41,21 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       const storedEmail = sessionStorage.getItem('email');
-      if (storedEmail != null){
+      if (storedEmail){
         this.email = storedEmail;
         this.onGetAssessments(this.email);
+      }else{
+        sessionStorage.clear();
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: 'Please log in to access this page',
+          showConfirmButton: true,
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.router.navigate(['/login']);
+          }
+        });
       }
     }
     }
@@ -60,6 +72,7 @@ export class DashboardComponent implements OnInit {
           if (res && Array.isArray(res) && res.length > 0) {
             this.assessments = res;
             this.filteredAssessments = res;
+            this.sortAssessments();
           } else {
             // If the response is an empty array, treat it as a 404 case
             Swal.fire({
@@ -81,7 +94,6 @@ export class DashboardComponent implements OnInit {
           }
         }
       );
-      this.sortAssessments();
     }
     
     /**

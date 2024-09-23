@@ -44,7 +44,22 @@ export class AdminComponent implements OnInit {
   constructor(private router: Router, private api: ApiService) {}
 
   ngOnInit(): void {
-    this.loadExistingData();
+    const email = sessionStorage.getItem('AdminEmail');
+    if (!email) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: 'Please log in to access this page',
+        showConfirmButton: true,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.router.navigate(['/login']);
+        }
+      });
+    }
+    else{
+      this.loadExistingData();
+    }
   }
 
   loadExistingData(): void {

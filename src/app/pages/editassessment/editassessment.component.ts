@@ -94,9 +94,19 @@ export class EditAssessmentComponent implements OnInit {
       if (storedAssessmentModEmail !== null) {
         this.assessmentModEmail = storedAssessmentModEmail;
       }
-      if (storedAssessmentLecturerEmail !== null) {
-        this.assessmentLecturerEmail = storedAssessmentLecturerEmail;
-      }
+      else {
+        sessionStorage.clear();
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: 'Please log in to access this page',
+            showConfirmButton: true,
+          }).then((result) => {
+            if (result.isConfirmed) {
+              this.router.navigate(['/login']);
+            }
+          });
+        }
     }
     this.fetchData();
   }
