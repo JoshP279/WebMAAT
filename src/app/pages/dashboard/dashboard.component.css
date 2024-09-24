@@ -74,28 +74,55 @@
     justify-content: space-between;
     align-items: center;
   }
+  .navbar {
+    background-color: #000080;
+    padding: 15px;
+  }
+  
+  .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
   .logo {
     color: white;
     font-size: 24px;
   }
-  .nav-menu {
-    list-style: none;
-    display: flex;
-    gap: 20px;
-  }
-  .nav-menu li a {
-    color: white;
-    text-decoration: none;
-    font-size: 18px;
-  }
-  .nav-menu li a:hover {
+  
+  .logo a:hover {
     text-decoration: underline;
     cursor: pointer;
   }
+  
+  .nav-menu {
+    list-style: none;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .nav-menu li a {
+    padding: 10px 10px;
+    background-color: #000080;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    border: 1px solid transparent;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  
+  .nav-menu li a:hover {
+    background-color: #1E90FF;
+    border-color: #fff;
+    cursor: pointer;
+  }
+
+
   .assessments-header {
     margin-bottom: 20px;
   }
-  h2 {
+
+  .h2 {
     margin: 0;
     font-size: 24px;
     color: #333;

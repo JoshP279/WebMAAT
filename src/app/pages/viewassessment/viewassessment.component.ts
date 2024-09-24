@@ -197,7 +197,7 @@ export class ViewAssessmentComponent implements OnInit {
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', 'results.csv');
+      link.setAttribute('download', this.assessmentModule+ '_' + this.assessmentName + '_' + 'results.csv');
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -404,34 +404,49 @@ export class ViewAssessmentComponent implements OnInit {
    */
   onStudentsPublishResults(): void {
     // Filter submissions to include only those that are marked
-  const markedSubmissions = this.submissions.filter(submission => submission.submissionStatus === 'Marked');
-
-  // Check if there are any marked submissions
-  if (markedSubmissions.length === 0) {
-    // If no submissions are marked, show an alert and exit the function
-    Swal.fire({
-      icon: "warning",
-      title: "No Marked Submissions",
-      text: "There are no marked submissions to publish.",
+    const markedSubmissions = this.submissions.filter(submission => submission.submissionStatus === 'Marked');
+  
+    // Check if there are any marked submissions
+    if (markedSubmissions.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "No Marked Submissions",
+        text: "There are no marked submissions to publish.",
+      });
+      return; // Exit the function early
+    }
+  
+    let allSelected = true; // Variable to track if all are selected or deselected
+    let filteredSubmissions = [...markedSubmissions]; // Make a copy to apply search filter
+  
+    // Object to track the checkbox state of each submission by submissionID
+    const checkboxStates: { [key: string]: boolean } = {};
+    markedSubmissions.forEach(submission => {
+      checkboxStates[submission.submissionID] = true; // Initially, all are selected
     });
-    return; // Exit the function early
-  }
-    const submissionListHTML = this.submissions
-      .filter(submission => submission.submissionStatus === 'Marked')
-      .map(submission => `
-        <div style="display: flex; align-items: center; justify-content: flex-start; padding: 5px;">
-          <input type="checkbox" id="submission-${submission.submissionID}" class="swal2-checkbox" style="margin: 0; vertical-align: middle;" checked>
-          <label for="submission-${submission.submissionID}" style="margin-left: 8px; vertical-align: middle;">${submission.studentName} ${submission.studentSurname} - ${submission.studentNumber}</label>
+  
+    // Function to generate the HTML for the submission list
+    const generateSubmissionListHTML = (submissions: any[]) => {
+      return submissions.map(submission => `
+        <div style="display: flex; align-items: center; justify-content: flex-start; padding: 5px;" class="submission-item">
+          <input type="checkbox" id="submission-${submission.submissionID}" class="swal2-checkbox submission-checkbox"
+                 style="margin: 0; vertical-align: middle;" ${checkboxStates[submission.submissionID] ? 'checked' : ''}>
+          <label for="submission-${submission.submissionID}" style="margin-left: 8px; vertical-align: middle;">
+            ${submission.studentName} ${submission.studentSurname} - ${submission.studentNumber}
+          </label>
         </div>
-      `)
-      .join('');
+      `).join('');
+    };
   
     Swal.fire({
-      title: "Select Submissions to Publish",
+      title: "Select Marked Submissions to Publish",
       html: `
         <div>
           <p>Select the submissions you want to publish results for:</p>
-          ${submissionListHTML}
+          <input type="text" id="searchSubmissions" placeholder="Search"
+                 style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box;">
+          <button id="selectDeselectAll" style="margin-bottom: 10px; padding: 8px;">Deselect All</button>
+          <div id="submissionList">${generateSubmissionListHTML(filteredSubmissions)}</div>
         </div>
       `,
       showCancelButton: true,
@@ -439,8 +454,56 @@ export class ViewAssessmentComponent implements OnInit {
       cancelButtonColor: "#d33",
       confirmButtonText: "Publish Selected",
       cancelButtonText: "Cancel",
+      didOpen: () => {
+        const searchInput = document.getElementById('searchSubmissions') as HTMLInputElement;
+        const submissionList = document.getElementById('submissionList');
+        const selectDeselectButton = document.getElementById('selectDeselectAll');
+  
+        // Add event listener for filtering submissions based on search input
+        searchInput.addEventListener('input', (event) => {
+          const searchValue = (event.target as HTMLInputElement).value.toLowerCase();
+          filteredSubmissions = markedSubmissions.filter(submission =>
+            submission.studentName.toLowerCase().includes(searchValue) ||
+            submission.studentSurname.toLowerCase().includes(searchValue) ||
+            submission.studentNumber.includes(searchValue)
+          );
+          if (submissionList) {
+            submissionList.innerHTML = generateSubmissionListHTML(filteredSubmissions);
+          }
+          // Reattach event listeners for the checkboxes after re-rendering
+          attachCheckboxListeners();
+        });
+  
+        if (selectDeselectButton !== null) {
+          selectDeselectButton.addEventListener('click', () => {
+            allSelected = !allSelected; // Toggle the selection state
+            filteredSubmissions.forEach(submission => {
+              checkboxStates[submission.submissionID] = allSelected;
+            });
+  
+            const checkboxes = document.querySelectorAll('.submission-checkbox') as NodeListOf<HTMLInputElement>;
+            checkboxes.forEach(checkbox => {
+              checkbox.checked = allSelected; // Set all checkboxes to match the allSelected value
+            });
+  
+            selectDeselectButton.innerText = allSelected ? 'Deselect All' : 'Select All'; // Update button text
+          });
+        }
+  
+        // Function to attach event listeners to checkboxes to update checkboxStates
+        const attachCheckboxListeners = () => {
+          const checkboxes = document.querySelectorAll('.submission-checkbox') as NodeListOf<HTMLInputElement>;
+          checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+              const submissionID = checkbox.id.split('-')[1]; // Extract the submissionID from checkbox ID
+              checkboxStates[submissionID] = checkbox.checked; // Update the checkbox state
+            });
+          });
+        };
+  
+        attachCheckboxListeners(); // Attach checkbox event listeners when the modal opens
+      },
       preConfirm: () => {
-        // Get the Swal modal's content container
         const content = Swal.getHtmlContainer();
         if (!content) {
           Swal.showValidationMessage('Unable to find submission checkboxes.');
@@ -448,10 +511,7 @@ export class ViewAssessmentComponent implements OnInit {
         }
   
         // Collect IDs of selected submissions
-        const selectedSubmissions = this.submissions.filter(submission => {
-          const checkbox = content.querySelector(`#submission-${submission.submissionID}`) as HTMLInputElement;
-          return checkbox && checkbox.checked;
-        });
+        const selectedSubmissions = markedSubmissions.filter(submission => checkboxStates[submission.submissionID]);
   
         if (selectedSubmissions.length === 0) {
           Swal.showValidationMessage('Please select at least one submission to publish.');
@@ -475,7 +535,7 @@ export class ViewAssessmentComponent implements OnInit {
   sendStudentEmails(selectedSubmissions: Submission[]): void {
     for (const sub of selectedSubmissions) {
       if (sub.submissionStatus === 'Marked') {
-        this.sendEmail(sub.submissionID, sub.studentNumber);
+        this.sendEmail(sub.submissionID, sub.studentNumber, sub.submissionMark);
       }
     }
   }
@@ -559,12 +619,12 @@ export class ViewAssessmentComponent implements OnInit {
    * The function calls the getMarkedSubmission method to retrieve the marked submission as a PDF file
    * If the marked submission exists and is marked, the email is sent to the student email address
    */
-  sendEmail(submissionID:number, studentNumber:string): void {
+  sendEmail(submissionID:number, studentNumber:string, submissionMark: number): void {
     this.api.getMarkedSubmission(submissionID).subscribe((res: any) => {
       if (res && res.pdfData && res.pdfData.type === 'Buffer') {
         const emailData = {
           to: 's'+studentNumber+'@mandela.ac.za',
-          subject: this.assessmentName + ' Results',
+          subject: this.assessmentName + ' Results: ' + submissionMark + '%',
           text: 'Please find the attached marked submission for your assessment.\n' +
                     'Note that the marks have been automatically calculated. We recommend reviewing the details to ensure accuracy.\n' + 
                     'Please contact your lecturer if you have any queries.',

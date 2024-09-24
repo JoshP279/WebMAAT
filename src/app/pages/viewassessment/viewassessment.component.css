@@ -22,17 +22,22 @@
 .nav-menu {
   list-style: none;
   display: flex;
-  gap: 20px;
+  gap: 10px;
 }
 
 .nav-menu li a {
+  padding: 10px 10px;
+  background-color: #000080;
   color: white;
   text-decoration: none;
-  font-size: 18px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
 .nav-menu li a:hover {
-  text-decoration: underline;
+  background-color: #1E90FF;
+  border-color: #fff;
   cursor: pointer;
 }
 

@@ -54,8 +54,9 @@
       
       <div class="form-group">
         <label for="markers">Markers</label>
+        <input type="text" class="form-control" [(ngModel)]="searchTerm" (input)="onSearchMarkers()">
         <div class="marker-list-container">
-          <div *ngFor="let marker of markers">
+          <div *ngFor="let marker of filteredMarkers">
             <div class="form-check">
               <input
                 class="form-check-input"

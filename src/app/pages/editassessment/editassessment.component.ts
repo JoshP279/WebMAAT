@@ -29,12 +29,14 @@ export class EditAssessmentComponent implements OnInit {
   assessmentModEmail: string = '';
   assessmentID: number = 0;
   email = '';
+  searchTerm: string = '';
   assessmentType = '';
   loading: boolean = false;
   assessmentForm: FormGroup;
   modules: Module[] = [];
   moderators: Moderator[] = [];
   markers: Marker[] = [];
+  filteredMarkers: Marker[] = [];
   allMarkers: Marker[] = [];
   selectedMarkers: Marker[] = [];
   TotalMark: number = 0;
@@ -110,7 +112,14 @@ export class EditAssessmentComponent implements OnInit {
     }
     this.fetchData();
   }
-  
+
+  onSearchMarkers(){
+    this.filteredMarkers = this.markers.filter(marker =>
+      marker.Name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      marker.Surname.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      marker.MarkerEmail.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
   fetchData(): void {
     this.getModules()
       .then(() => this.getModerators())
@@ -180,6 +189,7 @@ export class EditAssessmentComponent implements OnInit {
       this.api.getMarkers().subscribe((res: any) => {
         if (res && Array.isArray(res)) {
           this.markers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+          this.filteredMarkers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
           resolve(); // Mark as resolved once markers are loaded
         } else {
           reject('Failed to load markers');
