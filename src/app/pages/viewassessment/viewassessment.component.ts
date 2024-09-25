@@ -191,8 +191,8 @@ export class ViewAssessmentComponent implements OnInit {
    * The results are exported as a CSV file with the columns: StudentNumber, StudentName, StudentSurname, SubmissionMark
    * The function creates a blob with the CSV data and creates a link to download the file
    */
-  onExportResults(): void {
-    const blob = this.getCSVData();
+  async onExportResults() {
+    const blob = await this.getCSVData();
     const link = document.createElement('a');
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
@@ -208,15 +208,51 @@ export class ViewAssessmentComponent implements OnInit {
    * Function to get the CSV data of the submissions
    * @returns a blob with the CSV data of the submissions
    */
-  getCSVData(): Blob{
-    const header = 'StudentNumber,StudentName,StudentSurname,SubmissionMark\n';
-    const rows = this.submissions.map(submission =>
-      `${submission.studentNumber},${submission.studentName || ''},${submission.studentSurname || ''},${submission.submissionMark}`
-    ).join('\n');
-    const csvContent = header + rows;
+
+  async getCSVData(): Promise<Blob> {
+    // Step 1: Collect all unique question texts
+    const allQuestionTexts = new Set<string>();
+
+    // First, we need to gather all unique question texts across submissions
+    await Promise.all(this.submissions.map(async submission => {
+        const submissionID = submission.submissionID;
+        const questionMarks = await this.api.getQuestionPerMark(submissionID).toPromise() as { QuestionText: string; MarkAllocation: number }[];
+        
+        questionMarks.forEach(qm => allQuestionTexts.add(qm.QuestionText));
+    }));
+
+    // Convert the set to an array for easier use
+    const uniqueQuestions = Array.from(allQuestionTexts);
+
+    // Step 2: Generate the CSV header
+    const header = `StudentNumber,StudentName,StudentSurname,SubmissionMark,${uniqueQuestions.join(',')}\n`;
+
+    // Step 3: Collect data for each submission
+    const submissionsWithMarks = await Promise.all(this.submissions.map(async submission => {
+        const submissionID = submission.submissionID;
+        const questionMarks = await this.api.getQuestionPerMark(submissionID).toPromise() as { QuestionText: string; MarkAllocation: number }[];
+
+        // Create an object for quick lookup of marks by question
+        const questionMarksMap = questionMarks.reduce((acc, qm) => {
+            acc[qm.QuestionText] = qm.MarkAllocation;
+            return acc;
+        }, {} as { [key: string]: number });
+
+        // Fill in the columns for each question with corresponding marks, or leave blank if missing
+        const questionMarksColumns = uniqueQuestions.map(questionText => 
+            questionMarksMap[questionText] !== undefined ? questionMarksMap[questionText] : ''
+        );
+
+        // Return a CSV row for this submission
+        return `${submission.studentNumber},${submission.studentName || ''},${submission.studentSurname || ''},${submission.submissionMark},${questionMarksColumns.join(',')}`;
+    }));
+
+    // Step 4: Combine everything into the final CSV content
+    const csvContent = header + submissionsWithMarks.join('\n');
     return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  }
-  
+}
+
+
   onEditStudentSubmission(submission: Submission): void {
     Swal.fire({
       title: 'Edit Submission',
@@ -576,8 +612,8 @@ export class ViewAssessmentComponent implements OnInit {
    * The function creates a form data object with the email details and calls the sendModeratorEmail method
    * If the email is sent successfully, a success dialog is displayed
    */
-  sendModeratorEmail() {
-    const csvBlob = this.getCSVData();
+  async sendModeratorEmail() {
+    const csvBlob = await this.getCSVData();
     const formData = new FormData();
     formData.append('to', this.modEmail);
     formData.append('subject', `${this.assessmentModule} ${this.assessmentName} Results`);

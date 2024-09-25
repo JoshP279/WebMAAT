@@ -114,6 +114,7 @@ export class EditAssessmentComponent implements OnInit {
   }
 
   onSearchMarkers(){
+    console.log(this.searchTerm);
     this.filteredMarkers = this.markers.filter(marker =>
       marker.Name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
       marker.Surname.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
@@ -270,6 +271,9 @@ export class EditAssessmentComponent implements OnInit {
       if (res && Array.isArray(res)) {
         this.allMarkers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
         this.markers = res
+                            .filter((marker: any) => marker.MarkerEmail !== this.assessmentModEmail)
+                            .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+        this.filteredMarkers = res
                             .filter((marker: any) => marker.MarkerEmail !== this.assessmentModEmail)
                             .map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
       }else{
@@ -631,35 +635,44 @@ export class EditAssessmentComponent implements OnInit {
     const dropzone = document.querySelector('.dropzone');
     dropzone?.classList.remove('dragover');
   }
-  onMarkerChange(event: any, marker: Marker): void {
-    if (marker.MarkerEmail === this.assessmentLecturerEmail) {
-      Swal.fire({
-        icon: "warning",
-        title: "Error",
-        text: 'You cannot deselect the assessment lecturer as a marker',
-      });
-      event.target.checked = true;
-      return;
-    }
-  
-    if (event.target.checked) {
-      if (!this.selectedMarkers.includes(marker)) {
-        this.selectedMarkers.push(marker);
-      }
-    } else {
-      this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail);
-    }
 
+// Check if the marker is the lecturer
+isLecturer(marker: Marker): boolean {
+  return marker.MarkerEmail === this.assessmentLecturerEmail;
+}
 
-  this.assessmentForm.patchValue({
-    markers: this.selectedMarkers.map(m => m.MarkerEmail)
-  });
+// Handle changes to marker selection
+onMarkerChange(event: any, marker: Marker): void {
+  // Prevent removing lecturer marker from selectedMarkers
+  if (marker.MarkerEmail === this.email) {
+    Swal.fire({
+      icon: "warning",
+      title: "Action not allowed",
+      text: 'You cannot deselect the assessment lecturer as a marker',
+    });
+    event.target.checked = true;
+    return;
   }
 
-
-  isMarkerSelected(marker: Marker): boolean {
-    return this.selectedMarkers.some(m => m.MarkerEmail === marker.MarkerEmail);
+  if (event.target.checked) {
+    // Add marker to selectedMarkers if checked
+    if (!this.selectedMarkers.includes(marker)) {
+      this.selectedMarkers.push(marker);
+    }
+  } else {
+    // Remove marker from selectedMarkers if unchecked
+    this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail);
   }
+
+  // Update the form control with the selected marker emails
+  this.assessmentForm.controls['markers'].setValue(this.selectedMarkers.map(m => m.MarkerEmail));
+}
+
+// Determine if a marker is selected
+isMarkerSelected(marker: Marker): boolean {
+  return this.selectedMarkers.some(m => m.MarkerEmail === marker.MarkerEmail);
+}
+
 
   /**
    * Function to handle the dropping of a zip file for the submissions.

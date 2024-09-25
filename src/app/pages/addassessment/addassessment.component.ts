@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ApiService } from '../../API/api.service';
 import { Module } from '../../classes/Module';
 import { Marker } from '../../classes/Marker';
@@ -14,7 +14,7 @@ import Swal from 'sweetalert2';
   standalone: true,
   templateUrl: './addassessment.component.html',
   styleUrls: ['./addassessment.component.css'],
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, FormsModule],
 })
 /**
  * AddAssessment component for handling the addition of assessments.
@@ -27,8 +27,10 @@ export class AddAssessmentComponent implements OnInit {
   assessmentForm: FormGroup;
   modules: Module[] = [];
   AssessmentName: string = '';
+  searchTerm = '';
   moderators: Moderator[] = [];
   markers: Marker[] = [];
+  filteredMarkers: Marker[] = [];
   allMarkers: Marker[] = [];
   selectedMarkers: Marker[] = [];
   TotalMark: number = 0;
@@ -148,6 +150,7 @@ export class AddAssessmentComponent implements OnInit {
       if (res && Array.isArray(res)) {
         this.allMarkers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
         this.markers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
+        this.filteredMarkers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));
         const lecturerMarker = this.markers.find(marker => marker.MarkerEmail === this.email);
   
         if (lecturerMarker) {
@@ -165,6 +168,16 @@ export class AddAssessmentComponent implements OnInit {
     }
   });
 }
+
+onSearchMarkers(){
+  console.log(this.searchTerm);
+  this.filteredMarkers = this.markers.filter(marker =>
+    marker.Name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+    marker.Surname.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+    marker.MarkerEmail.toLowerCase().includes(this.searchTerm.toLowerCase())
+  );
+}
+
 /**
  * Function to handle the submission of the form.
  * This function is called when the form is submitted.
@@ -560,7 +573,7 @@ export class AddAssessmentComponent implements OnInit {
     if (marker.MarkerEmail === this.email) {
       Swal.fire({
         icon: "warning",
-        title: "Error",
+        title: "Action not allowed",
         text: 'You cannot deselect the assessment lecturer as a marker',
       });
       event.target.checked = true;

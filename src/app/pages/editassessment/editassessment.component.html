@@ -51,10 +51,16 @@
           <div *ngIf="assessmentForm.get('totalMarks')?.errors?.['pattern']">Total Marks must be a positive number.</div>
       </div>
 
-      
       <div class="form-group">
         <label for="markers">Markers</label>
-        <input type="text" class="form-control" [(ngModel)]="searchTerm" (input)="onSearchMarkers()">
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="searchTerm"
+          [ngModelOptions]="{standalone: true}"
+          (input)="onSearchMarkers()"
+          placeholder="Search"
+        />
         <div class="marker-list-container">
           <div *ngFor="let marker of filteredMarkers">
             <div class="form-check">
@@ -73,6 +79,8 @@
           </div>
         </div>
       </div>
+      
+      
   
     <div class="form-group" (change)="onUpdateMemorandumToggle()">
       <label class="switch">

@@ -117,4 +117,7 @@ export class ApiService {
   updateSubmissionInfo(submissionInfo: any): Observable<any> {
     return this.http.put(`${this.baseUrl}/updateSubmission`, submissionInfo);
   }
+  getQuestionPerMark(submissionID: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/questionPerMark?SubmissionID=${submissionID}`);
+  }
 }
