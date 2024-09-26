@@ -7,6 +7,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .logo {
@@ -22,6 +23,7 @@
 .nav-menu {
   list-style: none;
   display: flex;
+  flex-wrap: wrap; /* Allow the items to wrap onto new lines */
   gap: 10px;
 }
 
@@ -40,6 +42,13 @@
   border-color: #fff;
   cursor: pointer;
 }
+
+@media (max-width: 768px) {
+  .nav-menu {
+    flex-direction: column;
+  }
+}
+
 
 .search-add {
   display: flex;

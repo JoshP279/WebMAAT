@@ -497,6 +497,12 @@ export class AdminComponent implements OnInit {
 
   onLogout(): void {
     sessionStorage.clear();
-    this.router.navigateByUrl('/login');
+    this.router.navigateByUrl('/login', { replaceUrl: true }).then(() => {
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', () => {
+        window.history.pushState(null, '', window.location.href);
+      });
+    });
+
   }
 }

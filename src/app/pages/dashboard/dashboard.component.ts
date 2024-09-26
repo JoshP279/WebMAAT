@@ -108,6 +108,7 @@ export class DashboardComponent implements OnInit {
         showDenyButton: true,
         showCancelButton: true,
         confirmButtonText: `Moodle Assesment`,
+        confirmButtonColor: '#000080',
         denyButtonText: `Test Drive Assessment`,
       }).then((result) => {
         if (result.isConfirmed) {
@@ -191,8 +192,14 @@ export class DashboardComponent implements OnInit {
    */
   onLogout(): void {
     sessionStorage.clear();
-    this.router.navigateByUrl('/login');
+    this.router.navigateByUrl('/login', { replaceUrl: true }).then(() => {
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', () => {
+        window.history.pushState(null, '', window.location.href);
+      });
+    });
   }
+  
 
   /**
    * Function to navigate to the dashboard page
