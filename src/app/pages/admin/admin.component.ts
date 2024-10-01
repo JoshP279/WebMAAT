@@ -22,24 +22,33 @@ export class AdminComponent implements OnInit {
 
   moduleName: string = '';
   moduleCode: string = '';
+  moduleSearchText: string = '';
 
   lecturerEmail: string = '';
   lecturerName: string = '';
   lecturerSurname: string = '';
   lecturerPassword: string = '';
   lecturerMarkingStyle: string = 'Right Handed Ticks';
+  lecturerSearchText: string = '';
+
 
   markerEmail: string = '';
   markerName: string = '';
   markerSurname: string = '';
   markerPassword: string = '';
   markerMarkingStyle: string = 'Right Handed Ticks';
+  markerSearchText: string = '';
 
   modules: Module[] = [];
+  filteredModules: Module[] = [];
   lecturers: Lecturer[] = [];
+  filteredLecturers: Lecturer[] = [];
   moderators: Moderator[] = [];
   markers: Marker[] = [];
+  filteredMarkers: Marker[] = [];
   assessments: Assessment[] = [];
+  filteredAssessments: Assessment[] = [];
+  assessmentSearchText: string = '';
 
   constructor(private router: Router, private api: ApiService) {}
 
@@ -67,10 +76,12 @@ export class AdminComponent implements OnInit {
 
     this.api.getModules().subscribe(modules => {
       this.modules = modules;
+      this.filteredModules = modules;
     });
 
     this.api.getLecturers().subscribe(lecturers => {
       this.lecturers = lecturers;
+      this.filteredLecturers = lecturers;
     });
 
     this.api.getModerators().subscribe(moderators => {
@@ -79,10 +90,12 @@ export class AdminComponent implements OnInit {
 
     this.api.getAllAssessments().subscribe(assessments => {
       this.assessments = assessments;
+      this.filteredAssessments = assessments;
     });
 
     this.api.getAssistantMarkers().subscribe(markers => {
       this.markers = markers;
+      this.filteredMarkers = markers;
       this.loading = false;
     }, err => {
       this.loading = false;
@@ -201,7 +214,23 @@ export class AdminComponent implements OnInit {
       }
     });
   }
-  
+
+  onSearchModule(){
+    this.filteredModules = this.modules.filter(module => module.ModuleName.toLowerCase().includes(this.moduleSearchText.toLowerCase()) || module.ModuleCode.toLowerCase().includes(this.moduleSearchText.toLowerCase()));
+  }
+
+  onSearchLecturer(){
+    this.filteredLecturers = this.lecturers.filter(lecturer => lecturer.Name.toLowerCase().includes(this.lecturerSearchText.toLowerCase()) || lecturer.Surname.toLowerCase().includes(this.lecturerSearchText.toLowerCase()) || lecturer.MarkerEmail.toLowerCase().includes(this.lecturerSearchText.toLowerCase()));
+  }
+
+  onSearchMarker(){
+    this.filteredMarkers = this.markers.filter(marker => marker.Name.toLowerCase().includes(this.markerSearchText.toLowerCase()) || marker.Surname.toLowerCase().includes(this.markerSearchText.toLowerCase()) || marker.MarkerEmail.toLowerCase().includes(this.markerSearchText.toLowerCase()));
+  }
+
+  onSearchAssessment(){
+    this.filteredAssessments = this.assessments.filter(assessment => assessment.assessmentName.toLowerCase().includes(this.assessmentSearchText.toLowerCase()) || assessment.moduleCode.toLowerCase().includes(this.assessmentSearchText.toLowerCase()));
+  }
+
   onAddLecturer(): void {
     if (this.lecturerEmail && this.lecturerName && this.lecturerSurname && this.lecturerPassword) {
       this.loading = true;

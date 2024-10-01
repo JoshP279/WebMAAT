@@ -450,6 +450,8 @@ export class EditAssessmentComponent implements OnInit {
     const selectedModEmail = selectElement.value;
     this.markers = this.allMarkers;
     this.markers = this.markers.filter((marker: Marker) => marker.MarkerEmail !== selectedModEmail);
+    this.selectedMarkers = this.selectedMarkers.filter((marker: Marker) => marker.MarkerEmail !== selectedModEmail);
+    this.filteredMarkers = this.markers;
   }
   
   processSubmissionPDF(pdfData: Uint8Array, assessmentID: number, firstName: string, lastName: string, studentNumber: string, folderName:string): void {

@@ -141,17 +141,17 @@ export class DashboardComponent implements OnInit {
       this.router.navigateByUrl('/view-assessment)')
     }
 
-    /**
-     * Function to visually indicate the progress of marking for an assessment
-     * @param numMarked - The number of submissions marked
-     * @param totalSubmissions - The total number of submissions
-     * @returns a string that represents the dash array for the progress bar
-     */
-    calculateDashArray(numMarked: number, totalSubmissions: number): string {
+
+  /**
+   * Function to calculate the stroke-dashoffset for solid progress bar
+   * @param numMarked - The number of submissions marked
+   * @param totalSubmissions - The total number of submissions
+   * @returns a number that represents the stroke offset for the progress circle
+   */
+  calculateDashOffset(numMarked: number, totalSubmissions: number): number {
     const percentage = (numMarked / totalSubmissions) * 100;
-    const val = 100-percentage;
-    const dashArray = `${percentage}, ${val.toString()}`;
-    return dashArray;
+    const dashOffset = 283 - (percentage / 100) * 283; // 283 is the circumference of the circle
+    return dashOffset;
   }
   
   /**

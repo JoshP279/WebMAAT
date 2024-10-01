@@ -22,8 +22,12 @@
   </div>
 
   <h3>Existing Modules</h3>
+  <div class="search">
+    <input type="text" [(ngModel)]="moduleSearchText" placeholder="Search" class="form-control" (input)="onSearchModule()">
+  </div>
+  <div class="scroll-view">
     <ul>
-      <li *ngFor="let module of modules">
+      <li *ngFor="let module of filteredModules">
         <span>{{ module.ModuleCode }} - {{ module.ModuleName }}</span>
         <div class="action-buttons">
           <button class="btn btn-sm btn-edit" (click)="onEditModule(module)">Edit</button>
@@ -31,6 +35,7 @@
         </div>
       </li>
     </ul>
+  </div>
 
   <div class="form-group">
     <label for="lecturer"><h3>Add Lecturer</h3></label>
@@ -47,15 +52,20 @@
   </div>
 
   <h3>Existing Lecturers</h3>
-  <ul>
-    <li *ngFor="let lecturer of lecturers">
-      {{ lecturer.Name }} {{ lecturer.Surname}} - {{ lecturer.MarkerEmail }} 
-      <div class = "action-buttons">
-        <button class="btn btn-sm btn-edit" (click)="onEditLecturer(lecturer)">Edit</button>
-        <button class="btn btn-sm btn-delete" (click)="onDeleteLecturer(lecturer.MarkerEmail)">Delete</button>
-      </div>
-    </li>
-  </ul>
+  <div class="search">
+    <input type="text" [(ngModel)]="lecturerSearchText" placeholder="Search" class="form-control" (input)="onSearchLecturer()">
+  </div>
+  <div class="scroll-view">
+    <ul>
+      <li *ngFor="let lecturer of filteredLecturers">
+        {{ lecturer.Name }} {{ lecturer.Surname}} - {{ lecturer.MarkerEmail }} 
+        <div class = "action-buttons">
+          <button class="btn btn-sm btn-edit" (click)="onEditLecturer(lecturer)">Edit</button>
+          <button class="btn btn-sm btn-delete" (click)="onDeleteLecturer(lecturer.MarkerEmail)">Delete</button>
+        </div>
+      </li>
+    </ul>
+  </div>
 
   <div class="form-group">
     <label for="marker"><h3>Add Assistant Marker</h3></label>
@@ -72,8 +82,12 @@
   </div>
 
   <h3>Existing Assistant Markers</h3>
+  <div class="search">
+    <input type="text" [(ngModel)]="markerSearchText" placeholder="Search" class="form-control" (input)="onSearchMarker()">
+  </div>
+  <div class="scroll-view">
   <ul>
-    <li *ngFor="let marker of markers">
+    <li *ngFor="let marker of filteredMarkers">
       {{ marker.Name }} {{ marker.Surname}} - {{ marker.MarkerEmail }}
       <div class = "action-buttons">
         <button class="btn btn-sm btn-edit" (click)="onEditAssistantMarker(marker)">Edit</button>
@@ -81,13 +95,20 @@
       </div>
     </li>
   </ul>
+</div>
+
   <h3>Current Assessments</h3>
-  <ul>
-    <li *ngFor="let assessment of assessments">
-      {{ assessment.moduleCode }} - {{ assessment.assessmentName }}
-      <div class="action-buttons">
-        <button class="btn btn-sm btn-delete" (click)="onDeleteAssessment(assessment.assessmentID)">Delete</button>
-      </div>
-    </li>
-  </ul>
+  <div class="search">
+    <input type="text" [(ngModel)]="assessmentSearchText" placeholder="Search" class="form-control" (input)="onSearchAssessment()">
+  </div>
+  <div class="scroll-view">
+    <ul>
+      <li *ngFor="let assessment of filteredAssessments">
+        {{ assessment.moduleCode }} - {{ assessment.assessmentName }}
+        <div class="action-buttons">
+          <button class="btn btn-sm btn-delete" (click)="onDeleteAssessment(assessment.assessmentID)">Delete</button>
+        </div>
+      </li>
+    </ul>
+  </div>
 </div>

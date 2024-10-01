@@ -135,6 +135,8 @@ export class AddAssessmentComponent implements OnInit {
     const selectedModEmail = selectElement.value;
     this.markers = this.allMarkers;
     this.markers = this.markers.filter((marker: Marker) => marker.MarkerEmail !== selectedModEmail);
+    this.selectedMarkers = this.selectedMarkers.filter((marker: Marker) => marker.MarkerEmail !== selectedModEmail);
+    this.filteredMarkers = this.markers;
   }
 
   /**
@@ -587,7 +589,7 @@ onSearchMarkers(){
       }
     } else {
       // Remove marker from selectedMarkers if unchecked
-      this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail);
+      this.selectedMarkers = this.selectedMarkers.filter(m => m.MarkerEmail !== marker.MarkerEmail || m.MarkerEmail === this.assessmentForm.value.moderator);
     }
   
     // Update the form control with the selected marker emails

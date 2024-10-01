@@ -482,7 +482,9 @@ export class ViewAssessmentComponent implements OnInit {
           <input type="text" id="searchSubmissions" placeholder="Search"
                  style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box;">
           <button id="selectDeselectAll" style="margin-bottom: 10px; padding: 8px;">Deselect All</button>
-          <div id="submissionList">${generateSubmissionListHTML(filteredSubmissions)}</div>
+          <div id="submissionList" style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+              ${generateSubmissionListHTML(filteredSubmissions)}
+            </div>
         </div>
       `,
       showCancelButton: true,

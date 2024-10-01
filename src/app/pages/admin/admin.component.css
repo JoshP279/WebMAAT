@@ -9,6 +9,11 @@
   align-items: center;
 }
 
+.scroll-view{
+  overflow-y: auto;
+  max-height: 500px;
+}
+
 .logo {
   color: white;
   font-size: 24px;
