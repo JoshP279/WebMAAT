@@ -37,6 +37,7 @@ export class ViewAssessmentComponent implements OnInit {
   medianMark: number = 0;
   highestMark: number = 0;
   lowestMark: number = 0;
+  loading = false;
 
   /**
  * DashboardComponent class
@@ -452,7 +453,7 @@ export class ViewAssessmentComponent implements OnInit {
       return; // Exit the function early
     }
   
-    let allSelected = true; // Variable to track if all are selected or deselected
+    let allSelected = false; // Variable to track if all are selected or deselected
     let filteredSubmissions = [...markedSubmissions]; // Make a copy to apply search filter
   
     // Object to track the checkbox state of each submission by submissionID
@@ -466,7 +467,7 @@ export class ViewAssessmentComponent implements OnInit {
       return submissions.map(submission => `
         <div style="display: flex; align-items: center; justify-content: flex-start; padding: 5px;" class="submission-item">
           <input type="checkbox" id="submission-${submission.submissionID}" class="swal2-checkbox submission-checkbox"
-                 style="margin: 0; vertical-align: middle;" ${checkboxStates[submission.submissionID] ? 'checked' : ''}>
+                 style="margin: 0; vertical-align: middle;" ${checkboxStates[submission.submissionID] ? 'unchecked' : ''}>
           <label for="submission-${submission.submissionID}" style="margin-left: 8px; vertical-align: middle;">
             ${submission.studentName} ${submission.studentSurname} - ${submission.studentNumber}
           </label>
@@ -481,7 +482,7 @@ export class ViewAssessmentComponent implements OnInit {
           <p>Select the submissions you want to publish results for:</p>
           <input type="text" id="searchSubmissions" placeholder="Search"
                  style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box;">
-          <button id="selectDeselectAll" style="margin-bottom: 10px; padding: 8px;">Deselect All</button>
+          <button id="selectDeselectAll" style="margin-bottom: 10px; padding: 8px;">Select All</button>
           <div id="submissionList" style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
               ${generateSubmissionListHTML(filteredSubmissions)}
             </div>
@@ -564,48 +565,190 @@ export class ViewAssessmentComponent implements OnInit {
         Swal.fire({
           title: "Results published!",
           text: "Selected marked students have been emailed their assessed script.",
-          icon: "success"
+          icon: "success",
+          showConfirmButton: false,
+          timer: 2000,
+          position: 'bottom-end',
         });
       }
     });
   }
   
   sendStudentEmails(selectedSubmissions: Submission[]): void {
+    this.loading = true;
     for (const sub of selectedSubmissions) {
       if (sub.submissionStatus === 'Marked') {
         this.sendEmail(sub.submissionID, sub.studentNumber, sub.submissionMark);
       }
     }
+    this.loading = false;
   }
 
   onModeratorPublishResults(): void {
+    const markedSubmissions = this.submissions.filter(submission => submission.submissionStatus === 'Marked');
+  
+    if (markedSubmissions.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "No Marked Submissions",
+        text: "There are no marked submissions to publish.",
+      });
+      return;
+    }
+  
+    let allSelected = false;
+    let filteredSubmissions = [...markedSubmissions];
+  
+    const checkboxStates: { [key: string]: boolean } = {};
+    markedSubmissions.forEach(submission => {
+      checkboxStates[submission.submissionID] = true;
+    });
+  
+    const generateSubmissionListHTML = (submissions: any[]) => {
+      return submissions.map(submission => `
+        <div style="display: flex; align-items: center; justify-content: flex-start; padding: 5px;" class="submission-item">
+          <input type="checkbox" id="submission-${submission.submissionID}" class="swal2-checkbox submission-checkbox"
+                 style="margin: 0; vertical-align: middle;" ${checkboxStates[submission.submissionID] ? 'unchecked' : ''}>
+          <label for="submission-${submission.submissionID}" style="margin-left: 8px; vertical-align: middle;">
+            ${submission.studentName} ${submission.studentSurname} - ${submission.studentNumber}
+          </label>
+        </div>
+      `).join('');
+    };
+  
     Swal.fire({
-      title: "Are you sure?",
+      title: "Select Marked Submissions to Publish",
       html: `
         <div>
-          <p>This will email the moderator (${this.modEmail}) the results of the assessment.</p>
+          <p>Publish the assessment results in a spreadsheet format, or selected scripts to the moderator (${this.modEmail}):</p>
+          <input type="text" id="searchSubmissions" placeholder="Search"
+                 style="margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box;">
+          <button id="selectDeselectAll" style="margin-bottom: 10px; padding: 8px;">Select All</button>
+          <div id="submissionList" style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+            ${generateSubmissionListHTML(filteredSubmissions)}
+          </div>
         </div>
       `,
-      icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#000080",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, publish results",
+      confirmButtonText: "Publish results",
       cancelButtonText: "Cancel",
-      preConfirm: () => {
-        if (!this.modEmail) {
-          Swal.showValidationMessage('Moderator email is missing.');
-          return undefined;
+      showDenyButton: true,
+      denyButtonText: "Publish selected",
+      didOpen: () => {
+        const searchInput = document.getElementById('searchSubmissions') as HTMLInputElement;
+        const submissionList = document.getElementById('submissionList');
+        const selectDeselectButton = document.getElementById('selectDeselectAll');
+  
+        searchInput.addEventListener('input', (event) => {
+          const searchValue = (event.target as HTMLInputElement).value.toLowerCase();
+          filteredSubmissions = markedSubmissions.filter(submission =>
+            submission.studentName.toLowerCase().includes(searchValue) ||
+            submission.studentSurname.toLowerCase().includes(searchValue) ||
+            submission.studentNumber.includes(searchValue)
+          );
+          if (submissionList) {
+            submissionList.innerHTML = generateSubmissionListHTML(filteredSubmissions);
+          }
+          attachCheckboxListeners();
+        });
+  
+        selectDeselectButton?.addEventListener('click', () => {
+          allSelected = !allSelected;
+          filteredSubmissions.forEach(submission => {
+            checkboxStates[submission.submissionID] = allSelected;
+          });
+  
+          const checkboxes = document.querySelectorAll('.submission-checkbox') as NodeListOf<HTMLInputElement>;
+          checkboxes.forEach(checkbox => {
+            checkbox.checked = allSelected;
+          });
+  
+          selectDeselectButton.innerText = allSelected ? 'Deselect All' : 'Select All';
+        });
+  
+        const attachCheckboxListeners = () => {
+          const checkboxes = document.querySelectorAll('.submission-checkbox') as NodeListOf<HTMLInputElement>;
+          checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+              const submissionID = checkbox.id.split('-')[1];
+              checkboxStates[submissionID] = checkbox.checked;
+            });
+          });
+        };
+  
+        attachCheckboxListeners();
+      },
+      preDeny: () => {
+        const selectedSubmissions = markedSubmissions.filter(submission => checkboxStates[submission.submissionID]);
+        if (selectedSubmissions.length === 0) {
+          Swal.showValidationMessage('Please select at least one submission to publish.');
+          return false;
         }
-        return true;
+        return selectedSubmissions;
       }
     }).then((result) => {
       if (result.isConfirmed) {
         this.sendModeratorEmail();
+      } else if (result.isDenied && result.value) {
+        this.sendZipToModerator(result.value);
       }
     });
-  }
-  
+  }  
+
+  sendZipToModerator(selectedSubmissions: Submission[]): void {
+  const zip = new JSZip();
+  const promises: Promise<any>[] = [];
+  this.loading = true;
+  selectedSubmissions.forEach(submission => {
+    const promise = this.api.getMarkedSubmission(submission.submissionID).toPromise().then(
+      (res: any) => {
+        if (res && res.pdfData && res.pdfData.type === 'Buffer') {
+          const byteArray = new Uint8Array(res.pdfData.data);
+          zip.file(`${submission.studentNumber}.pdf`, byteArray);
+        }
+      },
+      (error) => console.error(`Error fetching submission for ${submission.studentNumber}`, error)
+    );
+    promises.push(promise);
+  });
+
+  Promise.all(promises).then(() => {
+    zip.generateAsync({ type: 'blob' }).then(content => {
+      const formData = new FormData();
+      formData.append('to', this.modEmail);
+      formData.append('subject', `${this.assessmentModule} ${this.assessmentName} Marked Submissions`);
+      formData.append('text', 'Please find the attached ZIP file containing marked submissions.');
+      formData.append('filename', `${this.assessmentModule}_${this.assessmentName}_marked_submissions.zip`);
+      formData.append('zip', content, 'marked_submissions.zip');
+      console.log(formData);
+
+      this.api.sendModeratorZipEmail(formData).subscribe(
+        (res: any) => {
+          if (res.message === 'Failed to send email') {
+            Swal.fire('Failed to send email', res.error, 'error');
+            this.loading = false;
+          } else {
+            Swal.fire({
+              title: 'Results published!',
+              icon: 'success',
+              text: 'The moderator has been emailed the marked submissions.',
+              showConfirmButton: false,
+              timer: 2000,
+              position: 'bottom-end'
+            });
+            this.loading = false;
+          }
+        },
+        (error) => {
+          Swal.fire('Error', 'An error occurred while sending the email.', 'error')
+          this.loading = false;
+        }
+      );
+    });
+  });
+}
+
   /**
    * Function to send the moderator an email with the results of the assessment
    * The email is sent with the results as a CSV attachment
@@ -615,13 +758,14 @@ export class ViewAssessmentComponent implements OnInit {
    * If the email is sent successfully, a success dialog is displayed
    */
   async sendModeratorEmail() {
+    this.loading = true;
     const csvBlob = await this.getCSVData();
     const formData = new FormData();
     formData.append('to', this.modEmail);
     formData.append('subject', `${this.assessmentModule} ${this.assessmentName} Results`);
     formData.append('text', 'Please find the attached results for an assessment you are moderating.\n' +
                             'This is an automated email. Please contact the module lecturer if you have any queries.');
-    formData.append('csv', csvBlob, 'assessment_results.csv');
+    formData.append('csv', csvBlob, `${this.assessmentModule}_${this.assessmentName}_results.csv`);
     
     this.api.sendModeratorEmail(formData).subscribe(
       (res: any) => {
@@ -631,12 +775,17 @@ export class ViewAssessmentComponent implements OnInit {
             title: 'Failed to send email',
             text: res.error,
           });
+          this.loading = false;
         } else {
-          Swal.fire({
+            Swal.fire({
             title: "Results published!",
-            text: "The moderator has been emailed the results of the assessment.",
-            icon: "success"
-          });
+            text: `${this.modEmail} has been emailed the results of the assessment.`,
+            icon: "success",
+            showConfirmButton: false,
+            timer: 2000,
+            position: 'bottom-end',
+            });
+          this.loading = false;
         }
       },
       (error) => {
@@ -645,6 +794,7 @@ export class ViewAssessmentComponent implements OnInit {
           title: 'Error',
           text: 'An error occurred while sending the email. Please try again later.',
         });
+        this.loading = false;
       }
     );
   }
@@ -662,11 +812,13 @@ export class ViewAssessmentComponent implements OnInit {
       if (res && res.pdfData && res.pdfData.type === 'Buffer') {
         const emailData = {
           to: 's'+studentNumber+'@mandela.ac.za',
-          subject: this.assessmentName + ' Results: ' + submissionMark + '%',
+          subject: this.assessmentModule + ' ' + this.assessmentName + ' Results',
           text: 'Please find the attached marked submission for your assessment.\n' +
-                    'Note that the marks have been automatically calculated. We recommend reviewing the details to ensure accuracy.\n' + 
-                    'Please contact your lecturer if you have any queries.',
-          pdfData: res.pdfData
+                'Your mark for this assessment is: ' + submissionMark + '%.\n' + 
+                'Note that the marks have been automatically calculated. We recommend reviewing the details to ensure accuracy.\n' +
+                'Please contact your lecturer if you have any queries.',
+          pdfData: res.pdfData,
+          filename: `${this.assessmentModule}_${this.assessmentName}_submission_${studentNumber}.pdf`
         };
         this.api.sendStudentEmail(emailData).subscribe((res: any) => {
           if (res && res.message === 'Failed to send email') {
@@ -737,4 +889,4 @@ export class ViewAssessmentComponent implements OnInit {
     }
   });
 }
-}
+}  

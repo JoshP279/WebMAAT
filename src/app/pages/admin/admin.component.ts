@@ -188,8 +188,16 @@ export class AdminComponent implements OnInit {
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
+      confirmButtonText: 'Yes, delete it!',
+      preConfirm: () => {
+        if (this.assessments.some(assessment => assessment.moduleCode === moduleCode)) {
+          Swal.showValidationMessage('This module still has assessments, please delete their assessments first');
+          return false;
+        }
+        return true;
+      }
+    })
+    .then((result) => {
       if (result.isConfirmed) {
         this.loading = true;
         this.api.deleteModule(moduleCode).subscribe(
@@ -205,6 +213,7 @@ export class AdminComponent implements OnInit {
               timerProgressBar: true
             });
             this.modules = this.modules.filter(m => m.ModuleCode !== moduleCode);
+            this.filteredModules = this.filteredModules.filter(m => m.ModuleCode !== moduleCode);
           },
           err => {
             this.loading = false;
@@ -232,7 +241,8 @@ export class AdminComponent implements OnInit {
   }
 
   onAddLecturer(): void {
-    if (this.lecturerEmail && this.lecturerName && this.lecturerSurname && this.lecturerPassword) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (this.lecturerEmail && emailRegex.test(this.lecturerEmail) && this.lecturerName && this.lecturerSurname && this.lecturerPassword) {
       this.loading = true;
       this.api.addLecturer(new Lecturer(this.lecturerEmail, this.lecturerName, this.lecturerSurname, this.lecturerPassword, this.lecturerMarkingStyle)).subscribe(
         res => {
@@ -258,7 +268,10 @@ export class AdminComponent implements OnInit {
           Swal.fire('Error', 'Failed to add lecturer', 'error');
         }
       );
-    } else {
+    }else if (emailRegex.test(this.lecturerEmail) === false){
+      Swal.fire('Error', 'Please enter a valid email address', 'error');
+    } 
+    else {
       Swal.fire('Error', 'Please fill out all fields', 'error');
     }
   }
@@ -334,7 +347,14 @@ export class AdminComponent implements OnInit {
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonText: 'Yes, delete it!',
+      preConfirm: () => {
+        if (this.assessments.some(assessment => assessment.lecturerEmail === email || assessment.modEmail === email)) {
+          Swal.showValidationMessage('This lecturer still has assessments they are lecturing or moderating, please delete the relevant assessments first.');
+          return false;
+        }
+        return true;
+      } 
     }).then((result) => {
       if (result.isConfirmed) {
         this.loading = true;
@@ -342,6 +362,7 @@ export class AdminComponent implements OnInit {
           res => {
             this.loading = false;
             this.lecturers = this.lecturers.filter(l => l.MarkerEmail !== email);
+            this.filteredLecturers = this.filteredLecturers.filter(l => l.MarkerEmail !== email);
             Swal.fire({
               icon: 'success',
               title: 'Success',
@@ -362,7 +383,8 @@ export class AdminComponent implements OnInit {
   }  
 
   onAddAssistantMarker(): void {
-    if (this.markerEmail && this.markerName && this.markerSurname && this.markerPassword) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (this.markerEmail && emailRegex.test(this.markerEmail) && this.markerName && this.markerSurname && this.markerPassword) {
       this.loading = true;
       this.api.addMarker(new Marker(this.markerEmail, this.markerName, this.markerSurname, this.markerPassword, this.markerMarkingStyle)).subscribe(
         res => {
@@ -388,7 +410,10 @@ export class AdminComponent implements OnInit {
           Swal.fire('Error', 'Failed to add marker', 'error');
         }
       );
-    } else {
+    }else if (emailRegex.test(this.markerEmail) === false){
+      Swal.fire('Error', `${this.markerEmail} is an invalid email address`, 'error');
+    } 
+    else {
       Swal.fire('Error', 'Please fill out all fields', 'error');
     }
   }
@@ -457,7 +482,7 @@ export class AdminComponent implements OnInit {
   onDeleteAssistantMarker(email: string): void {
     Swal.fire({
       title: 'Are you sure?',
-      text: "This action cannot be undone!",
+      text: "This action cannot be undone, and the assistant markers will be removed from any assessments they are currently assigned to.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
@@ -479,6 +504,7 @@ export class AdminComponent implements OnInit {
               timerProgressBar: true
             });
             this.markers = this.markers.filter(m => m.MarkerEmail !== email);
+            this.filteredMarkers = this.filteredMarkers.filter(m => m.MarkerEmail !== email);
           },
           err => {
             this.loading = false;
@@ -514,6 +540,7 @@ export class AdminComponent implements OnInit {
               timerProgressBar: true
             });
             this.assessments = this.assessments.filter(a => a.assessmentID !== assessmentID);
+            this.filteredAssessments = this.filteredAssessments.filter(a => a.assessmentID !== assessmentID);
           },
           err => {
             this.loading = false;

@@ -28,6 +28,7 @@ export class EditAssessmentComponent implements OnInit {
   assessmentModuleCode: string = '';
   assessmentModEmail: string = '';
   assessmentID: number = 0;
+  oldMark: number = 0;
   email = '';
   searchTerm: string = '';
   assessmentType = '';
@@ -168,6 +169,7 @@ export class EditAssessmentComponent implements OnInit {
       if (res) {
         const markerEmails = JSON.parse(res.MarkerEmail);
         this.selectedMarkers = this.markers.filter(marker => markerEmails.includes(marker.MarkerEmail));
+        this.oldMark = res.TotalMark;
         this.assessmentForm.patchValue({
           assessmentName: res.AssessmentName,
           module: res.ModuleCode,
@@ -325,6 +327,7 @@ export class EditAssessmentComponent implements OnInit {
       Memorandum: memoByteArray,
       ModEmail: this.assessmentForm.value.moderator,
       TotalMark: this.assessmentForm.value.totalMarks,
+      OldMark: this.oldMark
     };
   
     this.api.editAssessment(assessmentInfo).subscribe(
