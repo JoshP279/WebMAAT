@@ -114,7 +114,7 @@ export class AdminComponent implements OnInit {
             title: 'Success',
             text: 'Module added successfully',
             position: 'bottom-end',
-            timer: 2000,
+            timer: 1500,
             showConfirmButton: false,
             timerProgressBar: true
           });
@@ -125,7 +125,7 @@ export class AdminComponent implements OnInit {
         err => {
           if (err.status === 409) {
             this.loading = false;
-            Swal.fire('Error', 'Module already exists', 'error');
+            Swal.fire('Error', 'Module code already exists, please add a new module with a unique module code', 'error');
             return;
           }
           this.loading = false;
@@ -165,7 +165,7 @@ export class AdminComponent implements OnInit {
               title: 'Success',
               text: 'Module updated successfully',
               position: 'bottom-end',
-              timer: 2000,
+              timer: 1500,
               showConfirmButton: false,
               timerProgressBar: true
             });
@@ -208,7 +208,7 @@ export class AdminComponent implements OnInit {
               title: 'Success',
               text: 'Module has been deleted successfully',
               position: 'bottom-end',
-              timer: 2000,
+              timer: 1500,
               showConfirmButton: false,
               timerProgressBar: true
             });
@@ -252,7 +252,7 @@ export class AdminComponent implements OnInit {
             title: 'Success',
             text: 'Lecturer added successfully',
             position: 'bottom-end',
-            timer: 2000,
+            timer: 1500,
             showConfirmButton: false,
             timerProgressBar: true
           });
@@ -264,6 +264,11 @@ export class AdminComponent implements OnInit {
           this.lecturerMarkingStyle = 'Right Handed Ticks';
         },
         err => {
+          if (err.status === 409){
+            this.loading = false;
+            Swal.fire('Error', 'Lecturer already exists, please add a new lecturer with a unique email address', 'error');
+            return;
+          }
           this.loading = false;
           Swal.fire('Error', 'Failed to add lecturer', 'error');
         }
@@ -319,7 +324,7 @@ export class AdminComponent implements OnInit {
               title: 'Success',
               text: 'Lecturer updated successfully',
               position: 'bottom-end',
-              timer: 2000,
+              timer: 1500,
               showConfirmButton: false,
               timerProgressBar: true
             });
@@ -368,7 +373,7 @@ export class AdminComponent implements OnInit {
               title: 'Success',
               text: 'Lecturer has been deleted',
               position: 'bottom-end',
-              timer: 2000,
+              timer: 1500,
               showConfirmButton: false,
               timerProgressBar: true
             });
@@ -394,7 +399,7 @@ export class AdminComponent implements OnInit {
             title: 'Success',
             text: 'Marker added successfully',
             position: 'bottom-end',
-            timer: 2000,
+            timer: 1500,
             showConfirmButton: false,
             timerProgressBar: true
           });
@@ -406,6 +411,11 @@ export class AdminComponent implements OnInit {
           this.markerMarkingStyle = 'RIght Handed Ticks';
         },
         err => {
+          if (err.status === 409){
+            this.loading = false;
+            Swal.fire('Error', 'Assistant marker already exists, please add a new assistant marker with a unique email address.', 'error');
+            return;
+          }
           this.loading = false;
           Swal.fire('Error', 'Failed to add marker', 'error');
         }
@@ -460,7 +470,7 @@ export class AdminComponent implements OnInit {
               title: 'Success',
               text: 'Marker updated successfully.',
               position: 'bottom-end',
-              timer: 2000,
+              timer: 1500,
               showConfirmButton: false,
               timerProgressBar: true
             });
@@ -499,7 +509,7 @@ export class AdminComponent implements OnInit {
               title: 'Success',
               text: 'Marker has been deleted',
               position: 'bottom-end',
-              timer: 2000,
+              timer: 1500,
               showConfirmButton: false,
               timerProgressBar: true
             });
@@ -535,7 +545,7 @@ export class AdminComponent implements OnInit {
               title: 'Success',
               text: 'Assessment has been deleted.',
               position: 'bottom-end',
-              timer: 2000,
+              timer: 1500,
               showConfirmButton: false,
               timerProgressBar: true
             });

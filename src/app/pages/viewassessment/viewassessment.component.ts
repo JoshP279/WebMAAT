@@ -120,6 +120,7 @@ export class ViewAssessmentComponent implements OnInit {
         this.filteredSubmissions = res.map((submission: any) => new Submission(submission.submissionID,submission.studentNumber, submission.submissionMark, submission.studentName, submission.studentSurname, submission.submissionStatus, submission.submissionFolderName));
         this.calculateStats();
         this.filterSubmissions();
+        this.loading  = false;
       } else {
         Swal.fire({
           icon: "error",
@@ -193,7 +194,18 @@ export class ViewAssessmentComponent implements OnInit {
    * The function creates a blob with the CSV data and creates a link to download the file
    */
   async onExportResults() {
+    try{
+    this.loading = true;
     const blob = await this.getCSVData();
+    if (blob === null) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to retrive results. Please try again.',
+      });
+      this.loading = false;
+      return;
+    }
     const link = document.createElement('a');
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
@@ -204,53 +216,68 @@ export class ViewAssessmentComponent implements OnInit {
       link.click();
       document.body.removeChild(link);
     }
+  }catch(error){
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to export results. Please try again.",
+    });
   }
+  finally{
+    this.loading = false;
+  }
+}
   /**
    * Function to get the CSV data of the submissions
    * @returns a blob with the CSV data of the submissions
    */
 
-  async getCSVData(): Promise<Blob> {
-    // Step 1: Collect all unique question texts
+  async getCSVData(): Promise<Blob | null>{
     const allQuestionTexts = new Set<string>();
 
-    // First, we need to gather all unique question texts across submissions
-    await Promise.all(this.submissions.map(async submission => {
+    try {
+      await Promise.all(this.submissions.map(async submission => {
         const submissionID = submission.submissionID;
-        const questionMarks = await this.api.getQuestionPerMark(submissionID).toPromise() as { QuestionText: string; MarkAllocation: number }[];
-        
-        questionMarks.forEach(qm => allQuestionTexts.add(qm.QuestionText));
-    }));
-
-    // Convert the set to an array for easier use
-    const uniqueQuestions = Array.from(allQuestionTexts);
-
-    // Step 2: Generate the CSV header
-    const header = `StudentNumber,StudentName,StudentSurname,SubmissionMark,${uniqueQuestions.join(',')}\n`;
-
-    // Step 3: Collect data for each submission
-    const submissionsWithMarks = await Promise.all(this.submissions.map(async submission => {
+        try {
+          const questionMarks = await this.api.getQuestionPerMark(submissionID).toPromise() as { QuestionText: string; MarkAllocation: number }[];
+          questionMarks.forEach(qm => allQuestionTexts.add(qm.QuestionText));
+        } catch (error) {
+          console.error(`Failed to fetch question marks for submission ID: ${submissionID}`, error);
+        }
+      }));
+    
+      const uniqueQuestions = Array.from(allQuestionTexts);
+    
+      const header = `StudentNumber,StudentName,StudentSurname,SubmissionMark,${uniqueQuestions.join(',')}\n`;
+    
+      const submissionsWithMarks = await Promise.all(this.submissions.map(async submission => {
         const submissionID = submission.submissionID;
-        const questionMarks = await this.api.getQuestionPerMark(submissionID).toPromise() as { QuestionText: string; MarkAllocation: number }[];
-
-        // Create an object for quick lookup of marks by question
-        const questionMarksMap = questionMarks.reduce((acc, qm) => {
+        try {
+          const questionMarks = await this.api.getQuestionPerMark(submissionID).toPromise() as { QuestionText: string; MarkAllocation: number }[];
+    
+          const questionMarksMap = questionMarks.reduce((acc, qm) => {
             acc[qm.QuestionText] = qm.MarkAllocation;
             return acc;
-        }, {} as { [key: string]: number });
-
-        // Fill in the columns for each question with corresponding marks, or leave blank if missing
-        const questionMarksColumns = uniqueQuestions.map(questionText => 
+          }, {} as { [key: string]: number });
+    
+          const questionMarksColumns = uniqueQuestions.map(questionText =>
             questionMarksMap[questionText] !== undefined ? questionMarksMap[questionText] : ''
-        );
-
-        // Return a CSV row for this submission
-        return `${submission.studentNumber},${submission.studentName || ''},${submission.studentSurname || ''},${submission.submissionMark},${questionMarksColumns.join(',')}`;
-    }));
-
-    // Step 4: Combine everything into the final CSV content
-    const csvContent = header + submissionsWithMarks.join('\n');
-    return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          );
+    
+          return `${submission.studentNumber},${submission.studentName || ''},${submission.studentSurname || ''},${submission.submissionMark},${questionMarksColumns.join(',')}`;
+        } catch (error) {
+          console.error(`Failed to fetch question marks for submission ID: ${submissionID}`, error);
+          return `${submission.studentNumber},${submission.studentName || ''},${submission.studentSurname || ''},${submission.submissionMark},${uniqueQuestions.map(() => '').join(',')}`;
+        }
+      }));
+    
+      const csvContent = header + submissionsWithMarks.join('\n');
+      return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    } catch (error) {
+      console.error('An error occurred while generating the CSV data:', error);
+      return null;
+    }
 }
 
 
@@ -348,7 +375,7 @@ export class ViewAssessmentComponent implements OnInit {
             title: 'Updated',
             text: 'Submission mark has been updated.',
             position: 'bottom-end',
-            timer: 2000,
+            timer: 1500,
             showConfirmButton: false,
             timerProgressBar: true
           });
@@ -459,7 +486,7 @@ export class ViewAssessmentComponent implements OnInit {
     // Object to track the checkbox state of each submission by submissionID
     const checkboxStates: { [key: string]: boolean } = {};
     markedSubmissions.forEach(submission => {
-      checkboxStates[submission.submissionID] = true; // Initially, all are selected
+      checkboxStates[submission.submissionID] = false; // Initially, none are selected
     });
   
     // Function to generate the HTML for the submission list
@@ -562,27 +589,56 @@ export class ViewAssessmentComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed && result.value) {
         this.sendStudentEmails(result.value);
-        Swal.fire({
-          title: "Results published!",
-          text: "Selected marked students have been emailed their assessed script.",
-          icon: "success",
-          showConfirmButton: false,
-          timer: 2000,
-          position: 'bottom-end',
-        });
+        
       }
     });
   }
   
   sendStudentEmails(selectedSubmissions: Submission[]): void {
+    let allSent = true; // Flag to track if all emails are sent successfully
     this.loading = true;
-    for (const sub of selectedSubmissions) {
+    
+    // Use Promise.all to handle all email sending processes and catch errors
+    const emailPromises = selectedSubmissions.map(sub => {
       if (sub.submissionStatus === 'Marked') {
-        this.sendEmail(sub.submissionID, sub.studentNumber, sub.submissionMark);
+        return this.sendEmail(sub.submissionID, sub.studentNumber, sub.submissionMark);
+      } else {
+        return Promise.resolve(null); // If submission is not 'Marked', skip it
       }
-    }
-    this.loading = false;
-  }
+    });
+
+    Promise.all(emailPromises).then(results => {
+      const failedEmails = results.filter(result => result === false);
+      this.loading = false;
+
+      if (failedEmails.length > 0) {
+        Swal.fire({
+          title: "Error",
+          text: `Some emails failed to send (${failedEmails.length} failed). Please retry or check your internet connection.`,
+          icon: "error",
+          showConfirmButton: true,
+        });
+      } else {
+        Swal.fire({
+          title: "Results published!",
+          text: "All selected marked students have been emailed their assessed script.",
+          icon: "success",
+          showConfirmButton: false,
+          timer: 1500,
+          position: 'bottom-end',
+        });
+      }
+    }).catch(error => {
+      this.loading = false;
+      console.error("Error sending emails:", error);
+      Swal.fire({
+        title: "Error",
+        text: "Failed to send emails. Please try again.",
+        icon: "error",
+        showConfirmButton: true,
+      });
+    });
+}
 
   onModeratorPublishResults(): void {
     const markedSubmissions = this.submissions.filter(submission => submission.submissionStatus === 'Marked');
@@ -601,7 +657,7 @@ export class ViewAssessmentComponent implements OnInit {
   
     const checkboxStates: { [key: string]: boolean } = {};
     markedSubmissions.forEach(submission => {
-      checkboxStates[submission.submissionID] = true;
+      checkboxStates[submission.submissionID] = false;
     });
   
     const generateSubmissionListHTML = (submissions: any[]) => {
@@ -734,7 +790,7 @@ export class ViewAssessmentComponent implements OnInit {
               icon: 'success',
               text: 'The moderator has been emailed the marked submissions.',
               showConfirmButton: false,
-              timer: 2000,
+              timer: 1500,
               position: 'bottom-end'
             });
             this.loading = false;
@@ -760,6 +816,15 @@ export class ViewAssessmentComponent implements OnInit {
   async sendModeratorEmail() {
     this.loading = true;
     const csvBlob = await this.getCSVData();
+    if (csvBlob === null) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to retrive results. Please try again.',
+      });
+      this.loading = false;
+      return
+    }
     const formData = new FormData();
     formData.append('to', this.modEmail);
     formData.append('subject', `${this.assessmentModule} ${this.assessmentName} Results`);
@@ -782,7 +847,7 @@ export class ViewAssessmentComponent implements OnInit {
             text: `${this.modEmail} has been emailed the results of the assessment.`,
             icon: "success",
             showConfirmButton: false,
-            timer: 2000,
+            timer: 1500,
             position: 'bottom-end',
             });
           this.loading = false;
@@ -798,7 +863,6 @@ export class ViewAssessmentComponent implements OnInit {
       }
     );
   }
-  
 
   /**
    * Function to send an email to a student with the marked submission
@@ -807,31 +871,60 @@ export class ViewAssessmentComponent implements OnInit {
    * The function calls the getMarkedSubmission method to retrieve the marked submission as a PDF file
    * If the marked submission exists and is marked, the email is sent to the student email address
    */
-  sendEmail(submissionID:number, studentNumber:string, submissionMark: number): void {
-    this.api.getMarkedSubmission(submissionID).subscribe((res: any) => {
-      if (res && res.pdfData && res.pdfData.type === 'Buffer') {
-        const emailData = {
-          to: 's'+studentNumber+'@mandela.ac.za',
-          subject: this.assessmentModule + ' ' + this.assessmentName + ' Results',
-          text: 'Please find the attached marked submission for your assessment.\n' +
-                'Your mark for this assessment is: ' + submissionMark + '%.\n' + 
-                'Note that the marks have been automatically calculated. We recommend reviewing the details to ensure accuracy.\n' +
-                'Please contact your lecturer if you have any queries.',
-          pdfData: res.pdfData,
-          filename: `${this.assessmentModule}_${this.assessmentName}_submission_${studentNumber}.pdf`
-        };
-        this.api.sendStudentEmail(emailData).subscribe((res: any) => {
-          if (res && res.message === 'Failed to send email') {
+  sendEmail(submissionID: number, studentNumber: string, submissionMark: number): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.api.getMarkedSubmission(submissionID).subscribe((res: any) => {
+        if (res && res.pdfData && res.pdfData.type === 'Buffer') {
+          const emailData = {
+            to: 's' + studentNumber + '@mandela.ac.za',
+            subject: this.assessmentModule + ' ' + this.assessmentName + ' Results',
+            text: 'Please find the attached marked submission for your assessment.\n' +
+              'Your mark for this assessment is: ' + submissionMark + '%.\n' + 
+              'Note that the marks have been automatically calculated. We recommend reviewing the details to ensure accuracy.\n' +
+              'Please contact your lecturer if you have any queries.',
+            pdfData: res.pdfData,
+            filename: `${this.assessmentModule}_${this.assessmentName}_submission_${studentNumber}.pdf`
+          };
+  
+          this.api.sendStudentEmail(emailData).subscribe((res: any) => {
+            if (res && res.message === 'Failed to send email') {
+              Swal.fire({
+                icon: "error",
+                title: "Failed to send email",
+                text: res.error,
+              });
+              resolve(false);
+            } else {
+              resolve(true);
+            }
+          }, error => {
+            console.error("Error sending email:", error);
             Swal.fire({
               icon: "error",
-              title: "Faild to send email",
-              text: res.error,
+              title: "Error",
+              text: "An error occurred while sending the email.",
             });
-          }
+            resolve(false);
+          });
+  
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error!",
+            text: "Unable to retrieve marked submission",
+          });
+          resolve(false);
+        }
+      }, error => {
+        console.error("Error retrieving marked submission:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An error occurred while retrieving the marked submission.",
         });
-      }
-    }
-    );
+        resolve(false);
+      });
+    });
   }
 
   onExportZippedSubmissions(): void {

@@ -81,12 +81,23 @@ export class AddAssessmentComponent implements OnInit {
       });
     }
   }
-  
   fetchData(): void {
-    this.getModules();
-    this.getModerators();
-    this.getMarkers();
+    this.loading = true;
+  
+    const modulePromise = this.getModules();
+    const moderatorsPromise = this.getModerators();
+    const markersPromise = this.getMarkers();
+  
+    Promise.all([modulePromise, moderatorsPromise, markersPromise])
+      .then(() => {
+        this.loading = false;
+      })
+      .catch((error) => {
+        this.loading = false
+        Swal.fire('Error', 'Failed to load data', 'error');
+      });
   }
+  
   /**
    * Function to fetch the modules from the server.
    * This function sends a GET request to the server to fetch the modules.

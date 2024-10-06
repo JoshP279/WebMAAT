@@ -123,6 +123,7 @@ export class EditAssessmentComponent implements OnInit {
     );
   }
   fetchData(): void {
+    this.loading = true;
     this.getModules()
       .then(() => this.getModerators())
       .then(() => this.getMarkers())
@@ -185,6 +186,7 @@ export class EditAssessmentComponent implements OnInit {
         });
       }
     });
+    this.loading = false;
   }
   
   async loadMarkers(): Promise<void> {
@@ -308,11 +310,10 @@ export class EditAssessmentComponent implements OnInit {
         reader.onloadend = async () => {
           const fileData = reader.result as ArrayBuffer;
           const byteArray = new Uint8Array(fileData);
-          this.sendAssessmentUpdate(byteArray); // Helper function to send updates
+          this.sendAssessmentUpdate(byteArray);
         };
         reader.readAsArrayBuffer(this.selectedMemoFile);
       } else {
-        // Proceed with submission if no memorandum update is needed
         this.sendAssessmentUpdate(null);
       }
     }
@@ -340,6 +341,9 @@ export class EditAssessmentComponent implements OnInit {
               icon: 'success',
               title: 'Success',
               text: 'Assessment edited successfully!',
+              showConfirmButton: false,
+              timer:1500,
+              position: 'bottom-end'
             });
             this.loading = false;
           }

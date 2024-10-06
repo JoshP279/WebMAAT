@@ -26,6 +26,7 @@ export class DashboardComponent implements OnInit {
   searchTerm: string = '';
   selectedStatus: string = '';
   sortOrder = 'asc';
+  loading = false;
 
   /**
    * @param api  - The API service for making HTTP requests to the server
@@ -67,6 +68,7 @@ export class DashboardComponent implements OnInit {
      * If the response is unsuccessful, an error message is displayed
      */
     onGetAssessments(email: string): void {
+      this.loading = true;
       this.api.getAssessments(email).subscribe(
         (res: any) => {
           if (res && Array.isArray(res) && res.length > 0) {
@@ -74,7 +76,6 @@ export class DashboardComponent implements OnInit {
             this.filteredAssessments = res;
             this.sortAssessments();
           } else {
-            // If the response is an empty array, treat it as a 404 case
             Swal.fire({
               icon: "error",
               title: "Error",
@@ -94,6 +95,7 @@ export class DashboardComponent implements OnInit {
           }
         }
       );
+      this.loading = false;
     }
     
     /**
