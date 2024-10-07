@@ -81,21 +81,25 @@ export class AddAssessmentComponent implements OnInit {
       });
     }
   }
-  fetchData(): void {
-    this.loading = true;
-  
-    const modulePromise = this.getModules();
-    const moderatorsPromise = this.getModerators();
-    const markersPromise = this.getMarkers();
-  
-    Promise.all([modulePromise, moderatorsPromise, markersPromise])
-      .then(() => {
-        this.loading = false;
-      })
-      .catch((error) => {
-        this.loading = false
-        Swal.fire('Error', 'Failed to load data', 'error');
+  async fetchData(): Promise<void> {
+    try{
+      this.loading = true;
+
+      const modules = this.getModules();
+      const moderators = this.getModerators();
+      const markers = this.getMarkers();
+
+      await Promise.all([modules, moderators, markers]);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: 'Failed to fetch data',
       });
+    }
+    finally{
+      this.loading = false;
+    }
   }
   
   /**
@@ -104,7 +108,7 @@ export class AddAssessmentComponent implements OnInit {
    * If the response is successful, the modules are stored in the modules array.
    * If the response is unsuccessful, an error message is displayed.
    */
-  getModules(){
+  async getModules(){
     this.api.getModules().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
         this.modules = res.map((module: any) => new Module(module.ModuleCode, module.ModuleName));
@@ -125,7 +129,7 @@ export class AddAssessmentComponent implements OnInit {
    * If the response is unsuccessful, an error message is displayed.
    * The logged in user's email is filtered out from the list of moderators, as a lecturer cannot select themselves as a moderator.
    */
-  getModerators(){
+  async getModerators(){
     this.api.getModerators().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
         this.moderators = res
@@ -158,7 +162,7 @@ export class AddAssessmentComponent implements OnInit {
    * The logged in user's email is filtered out from the list of markers, as a lecturer cannot select themselves as a marker, since they are already that lecturer.
    * To be clear, the lecturer always has access to assess their own assessments, so they do not need to be added as a marker.
    */
-  getMarkers(){
+  async getMarkers(){
     this.api.getMarkers().subscribe((res: any) => {
       if (res && Array.isArray(res)) {
         this.allMarkers = res.map((marker: any) => new Marker(marker.MarkerEmail, marker.Name, marker.Surname, '', marker.MarkingStyle));

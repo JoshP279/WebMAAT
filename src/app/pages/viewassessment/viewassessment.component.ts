@@ -943,6 +943,7 @@ export class ViewAssessmentComponent implements OnInit {
       cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
+        this.loading = true;
         const zip = new JSZip();
         const promises: Promise<any>[] = [];
 
@@ -968,7 +969,6 @@ export class ViewAssessmentComponent implements OnInit {
         zip.generateAsync({ type: "blob" })
           .then((content) => {
             saveAs(content, `${this.assessmentModule + '_' + this.assessmentName}.zip`);
-
           })
           .catch((err) => {
             Swal.fire({
@@ -977,6 +977,9 @@ export class ViewAssessmentComponent implements OnInit {
               text: "Unable to generate ZIP file.",
             });
             console.error("Error generating ZIP file:", err);
+          })
+          .finally(() => {
+            this.loading = false;
           });
       });
     }

@@ -135,6 +135,7 @@ export class EditAssessmentComponent implements OnInit {
           title: 'Error',
           text: 'Failed to load data. Please check your internet connection.',
         });
+        this.loading = false;
       });
   }
 
