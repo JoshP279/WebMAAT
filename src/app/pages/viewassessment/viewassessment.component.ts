@@ -943,6 +943,15 @@ export class ViewAssessmentComponent implements OnInit {
       cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
+        const markedSubmissions = this.submissions.filter(submission => submission.submissionStatus === 'Marked');
+        if (markedSubmissions.length === 0) {
+          Swal.fire({
+            icon: "warning",
+            title: "No Marked Submissions",
+            text: "There are no marked submissions to download.",
+          });
+          return;
+        }
         this.loading = true;
         const zip = new JSZip();
         const promises: Promise<any>[] = [];

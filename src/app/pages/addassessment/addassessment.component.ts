@@ -284,6 +284,9 @@ onSearchMarkers(){
               else{
                 [firstName, lastName, studentNumber] = this.extractInfoFromTDriveFolderName(folderName, fileName);
               }
+              if (!studentNumber || studentNumber.length !== 9) {
+                throw new Error('Invalid student number'); //then folder structure is wrong, so catch error, delete assessment and return
+              }
               console.log(`Folder: ${folderName}, FirstName: ${firstName}, LastName: ${lastName}, StudentNumber: ${studentNumber}`);
               if (fileName.endsWith('.pdf')) {
                 promises.push(
