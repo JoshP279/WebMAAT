@@ -310,6 +310,11 @@ onSearchMarkers(){
             title: "Error",
             text: 'Failed to extract ZIP file. Please ensure the ZIP file is structured correctly. Error: ' + error,
           });
+          this.api.deleteAssessment(assessmentID).subscribe((res: any) => {
+            if (res && res.message === 'Assessment deleted successfully') {
+              console.log('Assessment deleted successfully');
+            }
+          });
           this.loading = false;
         });
       }).catch((error) => {
@@ -318,7 +323,12 @@ onSearchMarkers(){
           title: "Error",
           text: 'Error reading ZIP file: ' + error,
         });
-        this.loading = false;
+          this.api.deleteAssessment(assessmentID).subscribe((res: any) => {
+            if (res && res.message === 'Assessment deleted successfully') {
+              console.log('Assessment deleted successfully');
+            }
+          });
+          this.loading = false;
       });
     }
   }
