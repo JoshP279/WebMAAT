@@ -12,7 +12,7 @@ import { Observable } from 'rxjs';
  * The methods in this class are used to make requests to the server
  */
 export class ApiService {
-  private baseUrl =  'http://10.202.130.155:8080';
+  private baseUrl =  'http://10.0.0.107:8080';
   constructor(private http: HttpClient) { }
 
   login(loginObj: any): Observable<any> {
