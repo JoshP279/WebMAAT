@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import JSZip, { folder } from 'jszip';
 import Swal from 'sweetalert2';
+import path from 'node:path';
 
 @Component({
   selector: 'app-addassessment',
@@ -273,10 +274,13 @@ onSearchMarkers(){
         zip.loadAsync(zipFileData).then((zipContents) => {
           const promises: Promise<void>[] = [];
           zip.forEach((relativePath, zipEntry) => {
-            const pathParts = relativePath.split('/');
+            console.log("Original relativePath:", relativePath);
+            const pathParts = relativePath.replace(/^\/*|\/*$/g, '').split('/');
             if (pathParts.length > 1) {
-              const folderName = pathParts[0];
-              const fileName = pathParts[pathParts.length - 1];
+                const folderName = pathParts[0];
+                const fileName = pathParts[pathParts.length - 1];
+                console.log("Folder Name:", folderName);
+                console.log("File Name:", fileName);
               var [firstName, lastName, studentNumber] = ['', '', ''];
               if (this.assessmentType === 'Moodle') {
                 [firstName, lastName, studentNumber] = this.extractInfoFromMoodleFolderName(folderName);
@@ -358,6 +362,7 @@ onSearchMarkers(){
     const [name, surname] = folderName.split('-').slice(0, 2);   
     let studentNumber = fileName.split('-')[1];
     studentNumber = studentNumber.replace('.pdf', '');
+
     return [name, surname, studentNumber];
 }
   /**

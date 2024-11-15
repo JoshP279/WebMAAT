@@ -400,7 +400,7 @@ export class ViewAssessmentComponent implements OnInit {
         });
   
       } else if (result.isDenied) {
-        this.onExportMarkedSubmission(submission.submissionID, submission.submissionStatus);
+        this.onExportMarkedSubmission(submission.submissionID, submission.submissionStatus, submission.studentNumber);
       }
     });
   }
@@ -414,7 +414,7 @@ export class ViewAssessmentComponent implements OnInit {
    * @param submissionStatus - The status of the submission (Marked, Unmarked, In Progress)
    * The function calls the getMarkedSubmission method to retrieve the marked submission as a PDF file, only if the submission is marked
    */
-  onExportMarkedSubmission(submissionID: number, submissionStatus: string): void {
+  onExportMarkedSubmission(submissionID: number, submissionStatus: string, studentNumber: string): void {
     if (submissionStatus === 'Marked') {
       this.api.getMarkedSubmission(submissionID).subscribe(
         (res: any) => {
@@ -423,7 +423,7 @@ export class ViewAssessmentComponent implements OnInit {
             const blob = new Blob([byteArray], { type: 'application/pdf' });
             const link = document.createElement('a');
             link.href = window.URL.createObjectURL(blob);
-            link.download = `MarkedSubmission_${submissionID}.pdf`;
+            link.download = `MarkedSubmission_${studentNumber}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
